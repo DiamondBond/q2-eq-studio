@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0e10" media="(prefers-color-scheme: dark)">
+<title>EQ Studio</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+<script src="eq.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<svg class="sprite" aria-hidden="true">
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></symbol>
+  <symbol id="i-redo" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+  <symbol id="i-sort" viewBox="0 0 24 24"><path d="m3 8 4-4 4 4M7 4v16M12 12h4M12 16h6M12 20h9"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M9 7V4h6v3"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 15V3M8 7l4-4 4 4M7 11H5v10h14V11h-2"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4M12 18v-6M9 15l3-3 3 3"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v5h7V3M8 21v-7h8v7"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7L20 8.5"/><path d="M20 3v5.5h-5.5"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+  <symbol id="i-eq" viewBox="0 0 24 24"><path d="M6 3v6.5M6 14.5V21M12 3v11.5M12 19.5V21M18 3v1.5M18 9.5V21"/><circle cx="6" cy="12" r="2.5"/><circle cx="12" cy="17" r="2.5"/><circle cx="18" cy="7" r="2.5"/></symbol>
+  <symbol id="i-headphones" viewBox="0 0 24 24"><path d="M4 18v-6a8 8 0 0 1 16 0v6"/><path d="M4 14h3v7H5a1 1 0 0 1-1-1zM20 14h-3v7h2a1 1 0 0 0 1-1z"/></symbol>
+  <symbol id="i-card" viewBox="0 0 24 24"><path d="M9 3h8a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7z"/><path d="M10 7v3M13 7v3M16 7v3"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4 2.5 20h19z"/><path d="M12 10v4M12 17h.01"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+</svg>
+
+<div id="app">
+  <div id="top" class="top">
+    <header class="bar">
+      <label class="name">
+        <svg class="i" aria-hidden="true"><use href="#i-edit"/></svg>
+        <span class="sr">Preset name</span>
+        <input id="name" type="text" placeholder="My EQ" maxlength="60" spellcheck="false" autocomplete="off" enterkeyhint="done">
+      </label>
+      <div id="status" class="status" data-state="wait" role="status" aria-live="polite">
+        <span class="dot" aria-hidden="true"></span><span id="statusText">Connecting</span>
+      </div>
+      <button id="saveTop" type="button" class="text-btn">Save</button>
+    </header>
+    <div id="alert" class="alert" role="alert" hidden>
+      <svg class="i" aria-hidden="true"><use href="#i-warn"/></svg>
+      <p id="alertText"></p>
+      <button id="retry" type="button" class="text-btn" hidden>Retry</button>
+    </div>
+  </div>
+
+  <main>
+    <section id="view-eq" class="view" role="tabpanel" aria-labelledby="tab-eq">
+      <div id="noteLocal" class="note" hidden>
+        <svg class="i" aria-hidden="true"><use href="#i-info"/></svg>
+        <div>
+          <h2>Not live on this Q2</h2>
+          <p>This Q2 Pod can't take an EQ from here yet, so you won't hear changes as you make them. Update Q2 Pod to hear them live.</p>
+          <p>Until then, save your EQ to the card, and on the Q2 pick it under the EQ page's “Import from SD /EQ” row.</p>
+          <button id="noteSave" type="button" class="btn primary small">Save to card</button>
+        </div>
+      </div>
+      <div id="note3eq" class="note" hidden>
+        <svg class="i" aria-hidden="true"><use href="#i-info"/></svg>
+        <div><p>The Q2 is on its simple 3-band EQ. Editing here switches it to this EQ.</p></div>
+      </div>
+
+      <div class="eq-layout">
+        <div class="eq-main">
+          <div id="graphBox" class="graph">
+            <canvas id="graph" role="img" aria-label="The EQ's curve. The band editor below holds the same values."></canvas>
+            <p id="graphBadge" class="badge" hidden></p>
+            <p id="legend" class="legend" hidden><span class="key-l">Left</span><span class="key-r">Right</span></p>
+            <p id="readout" class="readout" aria-hidden="true" hidden></p>
+          </div>
+
+          <div class="toolbar">
+            <button id="undo" type="button" class="icon-btn" aria-label="Undo" title="Undo"><svg class="i" aria-hidden="true"><use href="#i-undo"/></svg></button>
+            <button id="redo" type="button" class="icon-btn" aria-label="Redo" title="Redo"><svg class="i" aria-hidden="true"><use href="#i-redo"/></svg></button>
+            <div id="compare" class="seg compare" role="radiogroup" aria-label="What the Q2 plays" hidden>
+              <button type="button" role="radio" aria-checked="false" data-value="on">EQ on</button>
+              <button type="button" role="radio" aria-checked="false" data-value="off">EQ off</button>
+            </div>
+          </div>
+          <ul id="warnings" class="warnings" hidden></ul>
+
+          <div class="bands-head">
+            <h2>Bands <span id="count" class="count"></span></h2>
+            <button id="sort" type="button" class="chip-btn"><svg class="i" aria-hidden="true"><use href="#i-sort"/></svg>Sort</button>
+            <button id="add" type="button" class="chip-btn"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg>Add</button>
+          </div>
+          <div id="strip" class="strip" role="listbox" aria-label="Bands" aria-orientation="horizontal"></div>
+          <p class="hint"><span class="touch-only">Drag a dot to move it, pinch the graph for Q, double-tap to add a band.</span><span class="mouse-only">Drag a dot to move it, scroll over it for Q, double-click to add a band.</span></p>
+        </div>
+
+        <div class="eq-side">
+          <section class="card" aria-labelledby="bandTitle">
+            <div class="card-head">
+              <h2 id="bandTitle">Band</h2>
+              <label class="switch"><span class="sr" id="bandOnLabel">Band on</span><input id="bandOn" type="checkbox" role="switch"></label>
+              <button id="del" type="button" class="icon-btn danger" aria-label="Delete this band" title="Delete this band"><svg class="i" aria-hidden="true"><use href="#i-trash"/></svg></button>
+            </div>
+            <p id="bandEmpty" class="muted" hidden>No bands yet. Tap Add, or double-tap the graph.</p>
+            <div id="bandBody">
+              <div class="field">
+                <span class="label" id="typeLabel">Type</span>
+                <div id="type" class="seg" role="radiogroup" aria-labelledby="typeLabel">
+                  <button type="button" role="radio" data-value="PK">Peak</button>
+                  <button type="button" role="radio" data-value="LSC">Low shelf</button>
+                  <button type="button" role="radio" data-value="HSC">High shelf</button>
+                </div>
+              </div>
+              <div class="field">
+                <span class="label" id="channelLabel">Channel</span>
+                <div id="channel" class="seg" role="radiogroup" aria-labelledby="channelLabel">
+                  <button type="button" role="radio" data-value="all">Both</button>
+                  <button type="button" role="radio" data-value="L">Left</button>
+                  <button type="button" role="radio" data-value="R">Right</button>
+                </div>
+              </div>
+              <div class="ctl" data-ctl="freq"></div>
+              <div class="ctl" data-ctl="gain"></div>
+              <div class="ctl" data-ctl="q"></div>
+            </div>
+          </section>
+
+          <section class="card" aria-labelledby="outTitle">
+            <h2 id="outTitle">Output</h2>
+            <div class="field">
+              <span class="label" id="preampLabel">Preamp</span>
+              <div id="preampMode" class="seg" role="radiogroup" aria-labelledby="preampLabel">
+                <button type="button" role="radio" data-value="auto">Auto</button>
+                <button type="button" role="radio" data-value="hand">By hand</button>
+              </div>
+              <p id="autoNote" class="muted small"></p>
+            </div>
+            <div id="preampCtl" class="ctl" data-ctl="preamp"></div>
+            <div class="ctl" data-ctl="balance"></div>
+            <p class="muted small">Above 0 turns the left side down, below 0 the right.</p>
+          </section>
+
+          <section class="card" aria-labelledby="curveTitle">
+            <h2 id="curveTitle">Curve</h2>
+            <div class="field">
+              <span class="label" id="rateLabel">Draw it at</span>
+              <div id="rate" class="seg" role="radiogroup" aria-labelledby="rateLabel">
+                <button type="button" role="radio" data-value="44100">44.1 kHz</button>
+                <button type="button" role="radio" data-value="48000">48</button>
+                <button type="button" role="radio" data-value="96000">96</button>
+                <button type="button" role="radio" data-value="192000">192</button>
+              </div>
+            </div>
+            <p id="peak" class="muted small"></p>
+          </section>
+
+          <button id="reset" type="button" class="btn wide">Start over with 10 flat bands</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-presets" class="view" role="tabpanel" aria-labelledby="tab-presets" hidden>
+      <div class="search-bar">
+        <label class="search">
+          <svg class="i" aria-hidden="true"><use href="#i-search"/></svg>
+          <span class="sr">Search presets</span>
+          <input id="search" type="search" placeholder="Search headphones" spellcheck="false" autocomplete="off" autocapitalize="off" enterkeyhint="search">
+        </label>
+        <div id="types" class="types" role="radiogroup" aria-label="Kind"></div>
+      </div>
+      <p id="presetNote" class="list-note" aria-live="polite"></p>
+      <ul id="presetList" class="list"></ul>
+      <button id="presetRetry" type="button" class="btn wide" hidden>Try again</button>
+      <p id="credit" class="credit"></p>
+    </section>
+
+    <section id="view-card" class="view" role="tabpanel" aria-labelledby="tab-card" hidden>
+      <section class="card">
+        <h2>This EQ</h2>
+        <p id="cardThis" class="muted small"></p>
+        <div class="actions">
+          <button id="cardSave" type="button" class="btn primary"><svg class="i" aria-hidden="true"><use href="#i-save"/></svg>Save to card</button>
+          <button id="openFile" type="button" class="btn"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg>Open file</button>
+          <button id="export" type="button" class="btn"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg><span id="exportLabel">Download</span></button>
+        </div>
+        <input id="fileIn" type="file" accept=".txt,text/plain" hidden>
+      </section>
+      <div class="list-head">
+        <h2>On the card</h2>
+        <button id="cardRefresh" type="button" class="icon-btn" aria-label="Read the card again" title="Read the card again"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg></button>
+      </div>
+      <p class="list-note">The card's EQ folder. The Q2 imports from it under the EQ page's “Import from SD /EQ” row.</p>
+      <ul id="cardList" class="list"></ul>
+      <p id="cardNote" class="list-note" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <nav class="tabs" role="tablist" aria-label="EQ Studio">
+    <button id="tab-eq" type="button" role="tab" aria-selected="true" aria-controls="view-eq" data-view="eq"><svg class="i" aria-hidden="true"><use href="#i-eq"/></svg>EQ</button>
+    <button id="tab-presets" type="button" role="tab" aria-selected="false" aria-controls="view-presets" data-view="presets"><svg class="i" aria-hidden="true"><use href="#i-headphones"/></svg>Presets</button>
+    <button id="tab-card" type="button" role="tab" aria-selected="false" aria-controls="view-card" data-view="card"><svg class="i" aria-hidden="true"><use href="#i-card"/></svg>Card</button>
+  </nav>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden>
+  <p id="toastText"></p>
+  <button id="toastUndo" type="button" class="text-btn" hidden>Undo</button>
+</div>
+
+<dialog id="dlgSave" aria-labelledby="saveTitle">
+  <div id="saveAsk">
+    <h2 id="saveTitle">Save to the card</h2>
+    <label class="field-label" for="saveName">Name</label>
+    <input id="saveName" class="text-in" type="text" placeholder="My EQ" maxlength="60" spellcheck="false" autocomplete="off" enterkeyhint="done">
+    <p id="savePath" class="muted small"></p>
+    <ul id="saveWarn" class="warnings" hidden></ul>
+  </div>
+  <div id="saveReplace" hidden>
+    <h2>Replace it?</h2>
+    <p id="replaceText"></p>
+    <p class="muted small">If the Q2 already imported it, the Q2 keeps its copy until you import it again.</p>
+  </div>
+  <p id="saveError" class="error" role="alert" hidden></p>
+  <div class="dlg-buttons">
+    <button id="saveCancel" type="button" class="btn">Cancel</button>
+    <button id="saveGo" type="button" class="btn primary" autofocus>Save</button>
+  </div>
+</dialog>
+
+<dialog id="dlgAsk" aria-labelledby="askTitle">
+  <h2 id="askTitle"></h2>
+  <p id="askText"></p>
+  <div class="dlg-buttons">
+    <button id="askNo" type="button" class="btn">Cancel</button>
+    <button id="askYes" type="button" class="btn primary">OK</button>
+  </div>
+</dialog>
+
+<div id="pin" class="pin" hidden>
+  <form id="pinForm" class="pin-box" novalidate>
+    <div class="pin-icon"><svg class="i" aria-hidden="true"><use href="#i-lock"/></svg></div>
+    <h1>EQ Studio</h1>
+    <p class="muted">Enter the 6-digit PIN on the Q2's screen.</p>
+    <label class="sr" for="pinIn">PIN</label>
+    <input id="pinIn" class="pin-in" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" placeholder="······" autofocus>
+    <p id="pinError" class="error" role="alert" hidden></p>
+    <button id="pinGo" type="submit" class="btn primary wide" disabled>Sign in</button>
+  </form>
+</div>
+</body>
+</html>
