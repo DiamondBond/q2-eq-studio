@@ -1,5 +1,7 @@
 # EQ Studio
 
+![EQ Studio on a phone: dragging a band on the EQ curve, AutoEq's presets, a band's editor, and the light theme](docs/eq-studio.png)
+
 Edit the EQ of [Q2 Pod](https://github.com/DiamondBond/q2-pod) on your phone: the parametric EQ's bands as a curve you can drag, AutoEq's presets for thousands of headphones and IEMs, and what you set playing on the Q2 as you set it.
 
 A card app for the Shanling Q2. Install it from Q2 Pod's App Store, or unzip `eq-studio.zip` at the card's root (it holds one folder, `.eq-studio`). It then appears in Library → **Apps**.
