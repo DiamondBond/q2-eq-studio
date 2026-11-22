@@ -22,6 +22,12 @@ On a Q2 Pod with live EQ for card apps, the phone's EQ plays at once, as the Q2'
 
 Without it, the phone is an editor: save a preset to the card's `EQ` folder, then on the Q2 open the EQ page's **Import from SD /EQ** and pick it.
 
+### Bass and treble, and Poweramp's presets
+
+**Bass** and **Treble** are Poweramp's knobs: Bass a low shelf at 90 Hz, Q 0.8, Treble a high shelf at 10 kHz, Q 0.6, their sliders 0 to +15 dB as Poweramp's turn. Each is a band of its own, named on its chip, so it goes to the Q2 and into a saved preset as any band does; its dot on the graph moves only up and down, as the knob turns, and at 0 its band goes. The Q2's filters are peaks and shelves, so a knob is the shelf Poweramp's settings describe, close to Poweramp's sound but not checked against it.
+
+**Open file** on the Card tab also takes a preset exported from Poweramp (its `.json`): its bands and preamp, and Bass and Treble as those shelves, at the frequency and Q the file gives. What the Q2 can't take is said when the preset opens, and so is a preamp too small for the Q2, as Poweramp's often are: bands for one side only (the file doesn't say which side), more than 30 bands, values past the Q2's ranges. Poweramp's graphic-EQ presets aren't read: turn on its parametric EQ and export again.
+
 ## Files
 
 On the card: `.eq-studio/config.json` holds the code's key and the PIN, made the first time and kept, so a phone signed in once stays signed in (delete the file for new ones). Presets saved from the phone go to `EQ/`, as `.txt` files in the Equalizer APO format the Q2 imports.

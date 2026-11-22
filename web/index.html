@@ -10,6 +10,7 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="style.css">
 <script src="eq.js" defer></script>
+<script src="poweramp.js" defer></script>
 <script src="app.js" defer></script>
 </head>
 <body>
@@ -131,6 +132,13 @@
             </div>
           </section>
 
+          <section class="card" aria-labelledby="toneTitle">
+            <h2 id="toneTitle">Bass and treble</h2>
+            <div class="ctl" data-ctl="bass"></div>
+            <div class="ctl" data-ctl="treble"></div>
+            <p id="toneNote" class="muted small"></p>
+          </section>
+
           <section class="card" aria-labelledby="outTitle">
             <h2 id="outTitle">Output</h2>
             <div class="field">
@@ -189,7 +197,8 @@
           <button id="openFile" type="button" class="btn"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg>Open file</button>
           <button id="export" type="button" class="btn"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg><span id="exportLabel">Download</span></button>
         </div>
-        <input id="fileIn" type="file" accept=".txt,text/plain" hidden>
+        <p class="muted small">Open file takes a preset's .txt, or a preset exported from Poweramp, with its Bass and Treble.</p>
+        <input id="fileIn" type="file" accept=".txt,.json,text/plain,application/json" hidden>
       </section>
       <div class="list-head">
         <h2>On the card</h2>

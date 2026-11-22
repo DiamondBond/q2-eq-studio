@@ -6,6 +6,7 @@
   'use strict';
 
   const eq = window.Q2Eq;
+  const pa = window.Q2Poweramp;
   const $ = (id) => document.getElementById(id);
 
   const HISTORY_MAX = 200;
@@ -32,6 +33,7 @@
   const STORE = 'eq-studio';
   const CHANNEL_NAMES = { all: 'Both', L: 'Left', R: 'Right' };
   const TYPE_NAMES = { PK: 'Peak', LSC: 'Low shelf', HSC: 'High shelf' };
+  const KNOB_NAMES = { bass: 'Bass', treble: 'Treble' };
   const VIEWS = ['eq', 'presets', 'card'];
   const UNREACHABLE = "Can't reach the Q2. Check that it's on, EQ Studio is open on it, and this phone is on the same Wi-Fi.";
 
@@ -158,11 +160,25 @@
     commit(next);
   }
 
-  // A preset in, replacing this one: Undo brings that back.
-  function load(text, name, from) {
-    const parsed = eq.parse(text, name);
+  // Bass or Treble at gain dB, its band kept picked if it was, and the picked one kept when it goes.
+  function turnKnob(which, gain, key) {
+    const next = pa.setKnob(preset, which, gain);
+    if (!next) {
+      toast(`The Q2 takes up to ${eq.MAX_BANDS} bands, so ${KNOB_NAMES[which]} has no room. Delete a band first.`);
+      return false;
+    }
+    const at = pa.knobIndex(preset, which);
+    if (!gain && at >= 0 && picked > at) picked -= 1;
+    picked = Math.min(picked, Math.max(next.bands.length - 1, 0));
+    return commit(next, key);
+  }
+
+  // A preset in, replacing this one: Undo brings that back. parsed is eq.parse's, or Poweramp's read
+  // with what it changed on the way in, said with the warnings: its preamp was made for Poweramp, and
+  // on a live Q2 it plays at once.
+  function load(parsed, from) {
     if (!parsed.ok) {
-      notice("This preset couldn't be opened", `${parsed.error}. The Q2 would refuse it too.`);
+      notice("This preset couldn't be opened", parsed.line ? `${parsed.error}. The Q2 would refuse it too.` : parsed.error);
       return false;
     }
     picked = 0;
@@ -170,6 +186,8 @@
     steps.key = null;
     const called = preset.name ? `“${preset.name}”` : 'The preset';
     toast(live.on ? `${called} is playing.` : `${called} is loaded ${from}.`, steps.past.length > 0);
+    const notes = parsed.notes ? [...parsed.notes, ...eq.warnings(preset, rate)] : [];
+    if (notes.length) notice(parsed.notes.length ? `${called} is open, with changes` : `${called} is open`, notes.join(' '));
     return true;
   }
 
@@ -504,6 +522,22 @@
         get: () => preset.balance, set: (value, key) => commit({ ...preset, balance: value }, key),
       }),
     };
+    // The slider and − are Poweramp's knob, boost only, − stopping at 0; typed, a knob cuts too, as the
+    // Q2's shelves can.
+    const knobStep = (value, dir) => {
+      const next = lineStep(0.1)(value, dir);
+      return value >= 0 && next < 0 ? 0 : next;
+    };
+    for (const which of Object.keys(pa.KNOBS)) {
+      controls[which] = control(which, {
+        label: KNOB_NAMES[which], unit: 'dB', min: 0, max: pa.KNOB_MAX, low: -eq.GAIN_MAX, high: eq.GAIN_MAX,
+        signed: true, digits: [1, 2], fix: fixed(1), step: knobStep,
+        get: () => pa.knob(preset, which), set: (value, key) => turnKnob(which, value, key),
+      });
+    }
+    const shelf = (which) => `${hertz(pa.KNOBS[which].freq)}, Q ${pa.KNOBS[which].q}`;
+    setText($('toneNote'), `As Poweramp's knobs: a low shelf at ${shelf('bass')} and a high shelf at ${shelf('treble')}, each its own band. `
+      + "Close to Poweramp's sound, but not checked against it.");
   }
 
   /* ---------- The graph ---------- */
@@ -783,7 +817,7 @@
     const freq = Number(scale.freqAt(at.x + drag.dx).toPrecision(3));
     const gain = Math.round(scale.gainAt(at.y + drag.dy) * 10) / 10;
     editBand(drag.index, (band) => {
-      band.freq = freq;
+      if (!pa.knobOf(band)) band.freq = freq; // Bass's and Treble's dots move as their knobs do, up and down
       band.gain = gain;
     }, drag.key);
   }
@@ -891,13 +925,15 @@
     }
     bands.forEach((band, index) => {
       const chip = strip.children[index];
-      const tags = `${band.channel === 'all' ? '' : ` ${band.channel}`}${band.type === 'LSC' ? ' · LS' : band.type === 'HSC' ? ' · HS' : ''}`;
+      const knob = pa.knobOf(band);
+      const tags = knob ? ` · ${KNOB_NAMES[knob]}`
+        : `${band.channel === 'all' ? '' : ` ${band.channel}`}${band.type === 'LSC' ? ' · LS' : band.type === 'HSC' ? ' · HS' : ''}`;
       setText(chip.children[0], `${index + 1}${tags}`);
       setText(chip.children[1], shortHertz(band.freq));
       setText(chip.children[2], `${signed(band.gain)} dB`);
       chip.classList.toggle('off', !band.on);
       chip.setAttribute('aria-selected', String(index === picked));
-      chip.setAttribute('aria-label', `Band ${index + 1}: ${TYPE_NAMES[band.type]}, ${hertz(band.freq)}, ${signed(band.gain)} dB`
+      chip.setAttribute('aria-label', `Band ${index + 1}: ${knob ? `${KNOB_NAMES[knob]}, ` : ''}${TYPE_NAMES[band.type]}, ${hertz(band.freq)}, ${signed(band.gain)} dB`
         + `${band.channel === 'all' ? '' : `, ${CHANNEL_NAMES[band.channel]} only`}${band.on ? '' : ', off'}`);
     });
     setText($('count'), `${bands.length} of ${eq.MAX_BANDS}`);
@@ -917,7 +953,8 @@
     $('bandBody').hidden = !band;
     $('bandOn').closest('.switch').hidden = !band;
     $('del').hidden = !band;
-    setText($('bandTitle'), band ? `Band ${picked + 1}` : 'Bands');
+    const knob = band && pa.knobOf(band);
+    setText($('bandTitle'), band ? `Band ${picked + 1}${knob ? ` · ${KNOB_NAMES[knob]}` : ''}` : 'Bands');
     if (!band) return;
     $('bandOn').checked = band.on;
     $('bandOnLabel').textContent = `Band ${picked + 1} on`;
@@ -946,6 +983,7 @@
     $('preampCtl').hidden = preset.auto;
     controls.preamp.show(preset.preamp);
     controls.balance.show(preset.balance);
+    for (const which of Object.keys(pa.KNOBS)) controls[which].show(pa.knob(preset, which));
     radios($('rate'), String(rate));
     const cut = eq.autoPreamp(preset);
     setText($('autoNote'), preset.auto
@@ -1086,7 +1124,7 @@
     try {
       const response = await api('GET', cardPath(file));
       if (!response.ok) notice("This preset couldn't be opened", problem(response, await json(response)));
-      else load(await response.text(), eq.nameOfFile(file), 'from the card');
+      else load(eq.parse(await response.text(), eq.nameOfFile(file)), 'from the card');
     } catch (error) {
       notice("This preset couldn't be opened", reason(error));
     }
@@ -1169,11 +1207,13 @@
     const file = $('fileIn').files[0];
     $('fileIn').value = '';
     if (!file) return;
-    if (file.size > eq.FILE_MAX * 4) {
-      notice("This preset couldn't be opened", `Line 1: file exceeds ${eq.FILE_MAX} bytes. The Q2 would refuse it too.`);
+    if (file.size > pa.FILE_MAX) {
+      notice("This preset couldn't be opened", "It's too big to be a preset.");
       return;
     }
-    load(await file.text(), eq.nameOfFile(file.name), 'from the file');
+    const [text, name] = [await file.text(), eq.nameOfFile(file.name.replace(/\.json$/i, ''))];
+    if (pa.isJson(text)) load(pa.read(text, name), 'from Poweramp');
+    else load(eq.parse(text, name), 'from the file');
   }
 
   // A file to keep or send: the share sheet where the browser has one for files, else a download.
@@ -1330,7 +1370,7 @@
       const button = event.target.closest('.row');
       if (!button) return;
       const item = catalogue.items[Number(button.dataset.index)];
-      if (load(item.text, item.name, 'from AutoEq')) {
+      if (load(eq.parse(item.text, item.name), 'from AutoEq')) {
         catalogue.chosen = item.index;
         markChosen();
       }
