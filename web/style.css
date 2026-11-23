@@ -65,7 +65,7 @@
   --toast: #2e3036;
   --toast-text: #f4f4f6;
   --toast-action: #8fb6ff;
-  --shadow: 0 10px 30px rgba(0, 0, 0, .5), 0 0 0 1px var(--line);
+  --shadow: 0 10px 30px rgba(0, 0, 0, .5), 0 0 0 1px var(--fill-strong);
 }
 
 * { box-sizing: border-box; }
@@ -171,6 +171,20 @@ main {
   padding: 16px; margin-top: 12px;
 }
 .card > h2 { margin-bottom: 4px; }
+/* A card folded to its title, what it holds said beside it; the whole title opens it. */
+.fold > summary {
+  display: flex; align-items: center; gap: 8px; min-height: 28px;
+  margin: -16px -16px 0; padding: 16px 16px 4px; border-radius: var(--radius);
+  list-style: none; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.fold > summary::-webkit-details-marker { display: none; }
+.fold > summary:focus-visible { outline-offset: -2px; }
+.fold:not([open]) > summary { margin-bottom: -16px; padding-bottom: 16px; }
+.fold-title { flex: 1; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+.fold-sum { color: var(--muted); font-size: 15px; font-variant-numeric: tabular-nums; }
+.fold[open] .fold-sum { display: none; }
+.fold-i { color: var(--muted); transition: transform .2s; }
+.fold[open] .fold-i { transform: rotate(180deg); }
 .note {
   display: flex; gap: 12px; align-items: flex-start;
   background: var(--surface); border-radius: var(--radius);
@@ -227,7 +241,6 @@ main {
 
 /* ---------- The graph ---------- */
 
-.eq-side { min-width: 0; }
 .graph {
   position: relative; margin-top: 12px;
   height: clamp(230px, 38vh, 380px);
@@ -239,6 +252,7 @@ main {
   touch-action: none; -webkit-user-select: none; user-select: none;
   -webkit-touch-callout: none;
 }
+#graph:focus-visible { outline-offset: -2px; border-radius: var(--radius); }
 #graph.over-dot { cursor: grab; }
 #graph.dragging { cursor: grabbing; }
 .badge {
@@ -281,7 +295,7 @@ main {
 .warnings li + li { margin-top: 6px; }
 .warnings .i { width: 18px; height: 18px; color: var(--warn); margin-top: 1px; }
 
-.bands-head { display: flex; align-items: center; gap: 8px; margin-top: 18px; }
+.bands-head { position: relative; display: flex; align-items: center; gap: 8px; margin-top: 18px; }
 .bands-head h2 { flex: 1; }
 .count { font-weight: 500; color: var(--muted); font-size: 15px; margin-left: 4px; font-variant-numeric: tabular-nums; }
 .chip-btn {
@@ -315,6 +329,7 @@ main {
 .band-chip[aria-selected=true] .n { color: var(--accent); }
 .band-chip.off .f, .band-chip.off .g { color: var(--faint); text-decoration: line-through; }
 .hint { margin-top: 8px; font-size: 13px; color: var(--muted); }
+.hint kbd { padding: 0 5px; font-size: 11px; line-height: 16px; }
 @media (hover: hover) and (pointer: fine) {
   .touch-only { display: none; }
 }
@@ -436,7 +451,7 @@ input[type=range]:focus-visible { outline-offset: 0; border-radius: 8px; }
 .credit { margin: 16px 4px 0; font-size: 12px; line-height: 1.45; color: var(--faint); }
 
 .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
-.actions .btn { flex: 1 1 130px; padding: 0 12px; }
+.actions .btn { flex: 1 1 calc(50% - 5px); padding: 0 12px; }
 .actions .btn.primary { flex-basis: 100%; }
 
 /* ---------- Tab bar, toast, dialogs ---------- */
@@ -522,7 +537,7 @@ dialog .warnings li { background: var(--fill); }
 .icon-btn.ghost { background: none; color: var(--muted); }
 .icon-btn.ghost:active { background: var(--fill); }
 .icon-btn.toggle[aria-pressed=true] { background: var(--accent-soft); color: var(--accent); }
-.tool-gap { flex: 0 0 2px; }
+#curves { margin-left: 10px; }
 
 .fit {
   position: absolute; left: 40px; bottom: 30px;
@@ -540,7 +555,6 @@ kbd {
   font: 600 12px/1.3 var(--font); text-align: center; white-space: nowrap;
 }
 
-.bands-head { position: relative; }
 .menu {
   position: absolute; right: 0; top: calc(100% + 4px); z-index: 25;
   width: max-content; min-width: 260px; max-width: calc(100vw - 32px); padding: 6px;
@@ -554,9 +568,8 @@ kbd {
 }
 .menu button span { flex: 1; }
 .menu button .i { width: 20px; height: 20px; color: var(--muted); }
-.menu button:focus-visible { outline: none; background: var(--fill); }
+.menu button:focus-visible { outline-offset: -2px; background: var(--fill); }
 .menu button:active { background: var(--fill); }
-.menu button[aria-checked=true] .i { color: var(--accent); }
 .menu button.danger, .menu button.danger .i { color: var(--danger); }
 .menu kbd { color: var(--muted); }
 .menu hr { border: 0; border-top: 1px solid var(--line); margin: 6px 8px; }
@@ -574,8 +587,7 @@ kbd {
 }
 .thead { min-height: 30px; font-size: 12px; font-weight: 600; color: var(--muted); }
 .thead > :nth-child(n+5):not(:last-child) { text-align: right; padding-right: 6px; }
-#tbody .trow { cursor: default; }
-#tbody .trow.hover { background: var(--fill); }
+#tbody .trow.hover { background: var(--bg); }
 #tbody .trow.picked { background: var(--accent-soft); }
 .tnum {
   display: grid; place-items: center; width: 24px; height: 24px; padding: 0;
@@ -605,13 +617,13 @@ kbd {
   font: 500 13px var(--font); cursor: pointer;
 }
 .tin {
-  width: 100%; min-width: 0; height: 30px; padding: 0 6px;
+  width: 100%; min-width: 0; height: 30px; padding: 0 4px;
   border: 0; border-radius: 8px; background: none; color: var(--text);
-  font: 600 13.5px var(--font); text-align: right; font-variant-numeric: tabular-nums;
+  font: 600 13px var(--font); text-align: right; font-variant-numeric: tabular-nums;
 }
 .tin:focus { background: var(--surface); outline: 2px solid var(--accent); outline-offset: -2px; }
 .tin:read-only { color: var(--muted); }
-.trow.off .tin, .trow.off .tsel { color: var(--faint); }
+.trow.off .tin, .trow.off .tsel { color: var(--muted); }
 .tdel { width: 28px; height: 30px; border-radius: 8px; opacity: 0; }
 .tdel .i { width: 18px; height: 18px; }
 .trow:hover .tdel, .trow.picked .tdel, .tdel:focus-visible { opacity: 1; }
@@ -622,10 +634,12 @@ kbd {
 dialog.keys { width: min(calc(100vw - 32px), 780px); }
 .keys-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 32px; }
 .keys h3 { margin: 14px 0 8px; font-size: 13px; font-weight: 600; color: var(--muted); }
-.keys dl { display: grid; grid-template-columns: max-content 1fr; gap: 7px 14px; margin: 0; font-size: 14px; align-items: baseline; }
+.keys dl { display: grid; grid-template-columns: 8.5rem 1fr; gap: 7px 14px; margin: 0; font-size: 14px; align-items: baseline; }
 .keys dt { white-space: nowrap; }
 .keys dd { margin: 0; color: var(--muted); }
 .keys > .small { margin-top: 16px; }
+dialog.keys .dlg-buttons { justify-content: flex-end; }
+dialog.keys .dlg-buttons .btn { flex: 0 0 140px; }
 @media (max-width: 680px) {
   .keys-cols { grid-template-columns: 1fr; }
 }
@@ -641,15 +655,12 @@ body.dropping::after {
 /* ---------- A mouse ---------- */
 
 @media (hover: hover) and (pointer: fine) {
-  .btn:hover, .icon-btn:hover, .step:hover { background: var(--fill-strong); }
-  .btn.primary:hover, .btn.danger:hover { opacity: .9; }
-  .btn.primary:hover { background: var(--accent-fill); }
-  .btn.danger:hover { background: var(--danger-fill); }
-  .icon-btn.ghost:hover, .icon-btn.danger:hover, .text-btn:hover, .chip-btn:hover, .fit:hover { background: var(--fill); }
+  .btn:not(.primary, .danger):enabled:hover, .icon-btn:enabled:hover, .step:hover { background: var(--fill-strong); }
+  .btn.primary:enabled:hover, .btn.danger:enabled:hover { opacity: .9; }
+  .icon-btn.ghost:enabled:hover, .icon-btn.danger:enabled:hover, .text-btn:enabled:hover, .chip-btn:enabled:hover { background: var(--fill); }
   .icon-btn.toggle[aria-pressed=true]:hover { background: var(--accent-soft); filter: brightness(.97); }
   .seg button:not([aria-checked=true]):hover, .tabs button:not([aria-selected=true]):hover { color: var(--text); }
   .row:hover, .menu button:hover { background: var(--fill); }
-  #tbody .trow:hover:not(.picked) { background: var(--fill); }
   .tin:hover:not(:focus) { background: var(--fill); }
   .types button:not([aria-checked=true]):hover { border-color: var(--fill-strong); background: var(--fill); }
 }
@@ -659,7 +670,6 @@ body.dropping::after {
 @media (min-width: 720px) {
   .graph { height: clamp(280px, 42vh, 460px); }
   .view:not(#view-eq) { max-width: 720px; margin: 0 auto; }
-  .actions .btn.primary { flex-basis: 140px; }
 }
 
 /* A phone's: the graph with the EQ tab only. */
@@ -669,11 +679,11 @@ body.dropping::after {
 
 /* A computer's: the tabs in a sidebar, the graph beside them always, the bands as a table. */
 @media (min-width: 960px) {
-  :root { --side-w: clamp(460px, 36vw, 540px); }
+  :root { --side-w: clamp(500px, 36vw, 540px); }
   body { overflow: hidden; }
   #app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
   .top { position: relative; flex: none; }
-  .bar, .alert { max-width: none; padding-left: 20px; padding-right: 20px; }
+  .bar, .alert { max-width: none; padding-left: 16px; padding-right: 16px; }
   main {
     flex: 1; min-height: 0; max-width: none; margin: 0; padding: 0;
     display: grid; grid-template-columns: var(--side-w) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr);
@@ -721,5 +731,11 @@ body.dropping::after {
 
 @media (prefers-reduced-motion: reduce) {
   .status[data-state=sending] .dot { animation: none; }
-  .switch input, .switch input::before, .tsw, .tsw::before { transition: none; }
+  .switch input, .switch input::before, .tsw, .tsw::before, .fold-i { transition: none; }
+}
+
+/* A tablet wide enough for the table: no hover, so its delete shows, and fingers get room. */
+@media (min-width: 960px) and (pointer: coarse) {
+  .tdel { opacity: 1; }
+  #tbody .trow { min-height: 44px; }
 }

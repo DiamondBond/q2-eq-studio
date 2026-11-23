@@ -178,7 +178,7 @@
     if (!preset.bands.length) return;
     const on = !preset.bands.some((band) => band.on);
     if (commit({ ...preset, bands: preset.bands.map((band) => ({ ...band, on })) })) {
-      toast(on ? 'Every band is on.' : 'Every band is off. B turns them on again.', true);
+      toast(on ? 'Every band is on.' : 'Every band is off.', true);
     }
   }
 
@@ -205,12 +205,15 @@
   };
   const stepped = (field, value, dir, fine) => STEPS[field](fine)(value, dir);
 
-  function nudge(index, field, dir, fine, key) {
+  // A band's freq, gain or q set: Bass's and Treble's stay where their knobs have them.
+  function setField(index, field, value, key) {
     const band = preset.bands[index];
-    if (!band) return;
-    const value = stepped(field, band[field], dir, fine);
-    if (field === 'q') editBand(index, (b) => { b.q = clamp(value, eq.Q_MIN, eq.Q_MAX); }, key);
-    else moveBand(index, field === 'freq' ? value : band.freq, field === 'gain' ? value : band.gain, key);
+    if (field === 'q') return !pa.knobOf(band) && editBand(index, (b) => { b.q = clamp(value, eq.Q_MIN, eq.Q_MAX); }, key);
+    return moveBand(index, field === 'freq' ? value : band.freq, field === 'gain' ? value : band.gain, key);
+  }
+
+  function nudge(index, field, dir, fine, key) {
+    if (preset.bands[index]) setField(index, field, stepped(field, preset.bands[index][field], dir, fine), key);
   }
 
   // Bass or Treble at gain dB, its band kept picked if it was, and the picked one kept when it goes.
@@ -610,11 +613,11 @@
   let curves = false; // each band's own curve
   let zoom = null; // the dB range the wheel set, or null for the curve's own
   let zoomRoll = 0; // wheel pixels toward the next zoom step
-  let wheelQ = null; // a wheel's turn of a band's Q, unrounded: { index, q, at }
+  let wheelQ = null; // a wheel's turn of a band's Q, unrounded: { index, q, start, at }
 
   function readColours() {
     const style = getComputedStyle(document.documentElement);
-    for (const key of ['grid', 'zero', 'axis', 'accent', 'accent-fill', 'on-accent', 'right', 'faint', 'text', 'muted', 'graph-bg', 'bg']) {
+    for (const key of ['grid', 'zero', 'axis', 'accent', 'accent-fill', 'on-accent', 'right', 'faint', 'text', 'muted', 'graph-bg']) {
       colours[key] = style.getPropertyValue(`--${key}`).trim();
     }
     font = getComputedStyle(document.body).fontFamily;
@@ -892,6 +895,13 @@
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
     context.clearRect(0, 0, w, h);
     scale = plot(context, w, h);
+    // Undo, a paste or a load moves the dots under a still mouse: the one it's over now.
+    const hover = mouse && !drag && !pinch ? dotAt(mouse, 'mouse') : graphHover;
+    if (hover !== graphHover) {
+      graphHover = hover;
+      context.clearRect(0, 0, w, h);
+      scale = plot(context, w, h);
+    }
     $('legend').hidden = !scale.points.some((point) => Math.abs(point.left - point.right) > 0.01);
     $('fit').hidden = zoom === null;
 
@@ -1092,11 +1102,11 @@
     const index = dotAt(pointerAt(event), 'mouse');
     if (index >= 0) {
       const now = event.timeStamp;
-      if (!wheelQ || wheelQ.index !== index || now - wheelQ.at > 600) wheelQ = { index, q: preset.bands[index].q };
+      if (!wheelQ || wheelQ.index !== index || now - wheelQ.at > 600) wheelQ = { index, q: preset.bands[index].q, start: now };
       wheelQ.at = now;
       wheelQ.q = clamp(wheelQ.q * Math.exp(-delta * WHEEL_Q * (event.shiftKey ? 0.25 : 1)), eq.Q_MIN, eq.Q_MAX);
       pick(index);
-      editBand(index, (band) => { band.q = +wheelQ.q.toFixed(wheelQ.q < 1 ? 3 : 2); }, `wheel:${index}`);
+      editBand(index, (band) => { band.q = +wheelQ.q.toFixed(wheelQ.q < 1 ? 3 : 2); }, `wheel:${index}:${wheelQ.start}`);
       return;
     }
     zoomRoll += delta;
@@ -1204,12 +1214,12 @@
   }
 
   // A computer's band table: a row a band, its boxes rewritten unless one is being typed in.
-  const ROW = '<button type="button" class="tnum"></button>'
+  const ROW = '<button type="button" class="tnum" tabindex="-1"></button>'
     + '<input type="checkbox" class="tsw" role="switch">'
     + '<select class="tsel" data-field="type"><option value="PK">Peak</option><option value="LSC">Low shelf</option><option value="HSC">High shelf</option></select>'
     + '<select class="tsel" data-field="channel"><option value="all">Both</option><option value="L">Left</option><option value="R">Right</option></select>'
     + ['freq', 'gain', 'q'].map((field) => `<input class="tin" data-field="${field}" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" enterkeyhint="next">`).join('')
-    + '<button type="button" class="icon-btn ghost danger tdel"><svg class="i" aria-hidden="true"><use href="#i-trash"/></svg></button>';
+    + '<button type="button" class="icon-btn ghost tdel"><svg class="i" aria-hidden="true"><use href="#i-trash"/></svg></button>';
   const FIELD_DIGITS = { freq: [0, 2], gain: [1, 2], q: [2, 3] };
 
   function showField(input, value) {
@@ -1242,11 +1252,13 @@
         row.title = knob ? `${KNOB_NAMES[knob]}: Poweramp's knob, its gain under Bass and treble` : '';
         on.setAttribute('aria-label', `Band ${n} on`);
         type.setAttribute('aria-label', `Band ${n} type`);
-        channel.setAttribute('aria-label', `Band ${n} side`);
+        channel.setAttribute('aria-label', `Band ${n} channel`);
         freq.setAttribute('aria-label', `Band ${n} frequency, Hz`);
         gain.setAttribute('aria-label', `Band ${n} gain, dB`);
         q.setAttribute('aria-label', `Band ${n} Q`);
         del.setAttribute('aria-label', `Delete band ${n}`);
+        // Bass's and Treble's Hz and Q are Poweramp's knobs': their gain alone moves.
+        freq.readOnly = q.readOnly = !!knob;
       }
       on.checked = band.on;
       if (type.value !== band.type) type.value = band.type;
@@ -1305,6 +1317,8 @@
     controls.preamp.show(preset.preamp);
     controls.balance.show(preset.balance);
     for (const which of Object.keys(pa.KNOBS)) controls[which].show(pa.knob(preset, which));
+    const turned = Object.keys(pa.KNOBS).filter((which) => pa.knob(preset, which));
+    setText($('toneSum'), turned.map((which) => `${KNOB_NAMES[which]} ${signed(pa.knob(preset, which))}`).join(' · ') || 'Off');
     radios($('rate'), String(rate));
     const cut = eq.autoPreamp(preset);
     setText($('autoNote'), preset.auto
@@ -1641,7 +1655,7 @@
   }
 
   function onPaste(event) {
-    if (typingIn(event.target) || modalOpen() || $('app').inert) return;
+    if (typingIn(event.target) || modalOpen() || $('app').inert || drag || pinch) return;
     const text = event.clipboardData?.getData('text') ?? '';
     if (!text.trim()) return;
     event.preventDefault();
@@ -1726,9 +1740,7 @@
   function openMenu() {
     const items = $('moreMenu');
     setText($('bypassText'), preset.bands.some((band) => band.on) ? 'Turn every band off' : 'Turn every band on');
-    const curvesItem = items.querySelector('[data-act=curves]');
-    curvesItem.setAttribute('aria-checked', String(curves));
-    setText(curvesItem.querySelector('span'), curves ? "Hide each band's curve" : "Show each band's curve");
+    setText(items.querySelector('[data-act=curves] span'), curves ? "Hide each band's curve" : "Show each band's curve");
     for (const act of ['bypass', 'clear']) items.querySelector(`[data-act=${act}]`).disabled = !preset.bands.length;
     items.hidden = false;
     $('more').setAttribute('aria-expanded', 'true');
@@ -1795,7 +1807,7 @@
 
   function nextTheme() {
     const now = THEMES.indexOf(window.Q2Theme.picked);
-    window.Q2Theme.pick(THEMES[(Math.max(now, 0) + 1) % THEMES.length]);
+    window.Q2Theme.pick(THEMES[(now + 1) % THEMES.length]);
     syncTheme();
     readColours();
     invalidate();
@@ -1811,27 +1823,39 @@
 
   function onKey(event) {
     if ($('app').inert || modalOpen() || event.defaultPrevented || event.isComposing) return;
+    // Through a drag, Esc alone: it puts the band back.
+    if (drag || pinch) {
+      if (event.key === 'Escape' && cancelDrag()) event.preventDefault();
+      return;
+    }
     const target = event.target;
     const key = event.key;
-    if (event.ctrlKey || event.metaKey) {
-      if (event.altKey || typingIn(target)) return;
+    // AltGr, on Windows Ctrl and Alt both, types [ and ] on many keyboards.
+    const altGr = event.getModifierState?.('AltGraph');
+    if ((event.ctrlKey || event.metaKey) && !altGr) {
+      if (event.altKey) return;
       const letter = key.toLowerCase();
-      if (letter === 'z' && !event.shiftKey) undo();
-      else if (letter === 'y' || (letter === 'z' && event.shiftKey)) redo();
-      else if (letter === 's' && !event.shiftKey) openSave();
+      const typing = typingIn(target);
+      if (letter === 's' && !event.shiftKey) openSave();
       else if (letter === 'o' && !event.shiftKey) $('fileIn').click();
+      else if (typing) return;
+      else if (letter === 'z' && !event.shiftKey) undo();
+      else if (letter === 'y' || (letter === 'z' && event.shiftKey)) redo();
       else if (letter === 'c' && !event.shiftKey && !String(window.getSelection()).trim()) copyEq();
       else return;
       event.preventDefault();
       return;
     }
-    if (event.altKey || typingIn(target) || !$('moreMenu').hidden) return;
+    if ((event.altKey && !altGr) || typingIn(target) || !$('moreMenu').hidden) return;
     if (key === 'Escape') {
-      if (cancelDrag()) event.preventDefault();
-      else if (inspect) toggleInspect();
+      if (inspect) toggleInspect();
       return;
     }
-    // Space, the arrows and [ ] only where nothing else takes them: the page itself, or the graph.
+    // The tabs, the list and search anywhere; the rest is the graph's, and a phone's Presets and Card
+    // have none.
+    if (!wide.matches && view !== 'eq' && !['1', '2', '3', '?', '/', 'c', 'C'].includes(key)) return;
+    // Space where nothing else takes it, the page or the graph; the arrows on the graph, focused or
+    // under the mouse, so elsewhere they scroll.
     const free = target === document.body || target === $('graph') || target === document.documentElement;
     const band = keyBand();
     const once = !event.repeat;
@@ -1875,7 +1899,7 @@
         pick((picked + (key === ']' ? 1 : preset.bands.length - 1)) % preset.bands.length);
         break;
       case 'ArrowLeft': case 'ArrowRight': case 'ArrowUp': case 'ArrowDown': case ',': case '.': case '<': case '>':
-        if ((key.startsWith('Arrow') && !free) || !preset.bands[band]) return;
+        if ((key.startsWith('Arrow') && !(target === $('graph') || (free && mouse))) || !preset.bands[band]) return;
         if (band !== picked) pick(band);
         nudge(band, key.startsWith('ArrowL') || key.startsWith('ArrowR') ? 'freq' : key.startsWith('Arrow') ? 'gain' : 'q',
           key === 'ArrowRight' || key === 'ArrowUp' || key === '.' || key === '>' ? 1 : -1, fine, nudgeKey);
@@ -1886,9 +1910,8 @@
   }
 
   // A held key is one step; let go, the next press is another.
-  function onKeyUp(event) {
+  function onKeyUp() {
     if (steps.key?.startsWith('key:')) steps.key = null;
-    if (event.key === 'Shift' && drag) invalidate();
   }
 
   /* ---------- The table's boxes ---------- */
@@ -1907,17 +1930,14 @@
     } else if (target.classList.contains('tin')) {
       const field = target.dataset.field;
       const value = readNumber(target.value, field === 'freq');
-      if (value !== null) {
-        const limit = { freq: [eq.FREQ_MIN, eq.FREQ_MAX], gain: [-eq.GAIN_MAX, eq.GAIN_MAX], q: [eq.Q_MIN, eq.Q_MAX] }[field];
-        editBand(index, (band) => { band[field] = clamp(value, ...limit); });
-      }
+      if (value !== null) setField(index, field, value);
       target.value = decimals(preset.bands[index][field], FIELD_DIGITS[field]);
     }
   }
 
   function tableKey(event) {
     const target = event.target;
-    if (!target.classList.contains('tin') || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (!target.classList.contains('tin') || target.readOnly || event.ctrlKey || event.metaKey || event.altKey) return;
     const index = indexOf(target);
     const field = target.dataset.field;
     const band = preset.bands[index];
@@ -1925,9 +1945,7 @@
     if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
       event.preventDefault();
       const typed = readNumber(target.value, field === 'freq') ?? band[field];
-      const value = stepped(field, typed, event.key === 'ArrowUp' ? 1 : -1, event.shiftKey);
-      if (field === 'q') editBand(index, (b) => { b.q = clamp(value, eq.Q_MIN, eq.Q_MAX); }, `box:${index}:${field}`);
-      else moveBand(index, field === 'freq' ? value : band.freq, field === 'gain' ? value : band.gain, `box:${index}:${field}`);
+      setField(index, field, stepped(field, typed, event.key === 'ArrowUp' ? 1 : -1, event.shiftKey), `key:box:${index}:${field}`);
       target.value = decimals(preset.bands[index][field], FIELD_DIGITS[field]);
       target.select();
     } else if (event.key === 'Enter') {
@@ -2007,8 +2025,12 @@
     body.addEventListener('click', (event) => {
       const index = indexOf(event.target);
       if (index < 0) return;
-      if (event.target.closest('.tdel')) removeBand(index);
-      else pick(index);
+      if (!event.target.closest('.tdel')) pick(index);
+      else {
+        const focused = document.activeElement === event.target.closest('.tdel');
+        removeBand(index);
+        if (focused) (body.children[Math.min(index, body.children.length - 1)]?.querySelector('.tdel') ?? $('add')).focus();
+      }
     });
     body.addEventListener('mouseover', (event) => {
       const index = indexOf(event.target);
@@ -2138,7 +2160,8 @@
 
     // A preset's file dropped anywhere on the page opens.
     let over = 0;
-    const files = (event) => [...(event.dataTransfer?.types ?? [])].includes('Files') && !$('app').inert && !modalOpen();
+    const hasFiles = (event) => [...(event.dataTransfer?.types ?? [])].includes('Files');
+    const files = (event) => hasFiles(event) && !$('app').inert && !modalOpen();
     const dropping = (on) => document.body.classList.toggle('dropping', on);
     document.addEventListener('dragenter', (event) => {
       if (!files(event)) return;
@@ -2150,15 +2173,16 @@
       over = Math.max(over - 1, 0);
       if (!over) dropping(false);
     });
+    // A file let go anywhere is ours, so the browser doesn't open it in place of the page.
     document.addEventListener('dragover', (event) => {
-      if (files(event)) event.preventDefault();
+      if (hasFiles(event)) event.preventDefault();
     });
     document.addEventListener('drop', (event) => {
       over = 0;
       dropping(false);
-      if (!files(event)) return;
+      if (!hasFiles(event)) return;
       event.preventDefault();
-      openFile(event.dataTransfer.files[0]);
+      if (files(event)) openFile(event.dataTransfer.files[0]);
     });
 
     document.addEventListener('visibilitychange', () => {
@@ -2174,6 +2198,7 @@
     wide.addEventListener('change', () => {
       closeMenu();
       [stripPicked, rowPicked, rowHover] = [-1, -1, -1];
+      for (const name of VIEWS) delete scrolls[name];
       invalidate();
     });
     new ResizeObserver(invalidate).observe(canvas);
@@ -2191,8 +2216,14 @@
     $('exportLabel').textContent = 'Share';
     $('export').querySelector('use').setAttribute('href', '#i-share');
   }
-  if (MAC) for (const key of document.querySelectorAll('kbd[data-mod]')) key.textContent = key.textContent.replace('Ctrl+', '⌘').replace('Shift+', '⇧');
-  for (const element of document.querySelectorAll('[title*="Ctrl+"]')) if (MAC) element.title = element.title.replace('Ctrl+Shift+', '⇧⌘').replace('Ctrl+', '⌘');
+  if (MAC) {
+    const mac = (text) => text.replace('Ctrl+Shift+', '⇧⌘').replace('Ctrl+', '⌘');
+    for (const key of document.querySelectorAll('kbd[data-mod]')) key.textContent = mac(key.textContent);
+    for (const element of document.querySelectorAll('[title*="Ctrl+"]')) element.title = mac(element.title);
+    for (const element of document.querySelectorAll('[aria-keyshortcuts*="Control+"]')) {
+      element.setAttribute('aria-keyshortcuts', element.getAttribute('aria-keyshortcuts').replace('Control+', 'Meta+'));
+    }
+  }
   show(VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'eq', true);
   readState(true);
 })();

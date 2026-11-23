@@ -7,13 +7,14 @@
   const dark = matchMedia('(prefers-color-scheme: dark)');
   let picked = null;
   try {
-    picked = localStorage.getItem(KEY);
+    const stored = localStorage.getItem(KEY);
+    if (stored === 'light' || stored === 'dark') picked = stored;
   } catch {
     // Private browsing: the system's, then.
   }
 
   function apply() {
-    const theme = picked === 'light' || picked === 'dark' ? picked : dark.matches ? 'dark' : 'light';
+    const theme = picked ?? (dark.matches ? 'dark' : 'light');
     root.dataset.theme = theme;
     for (const meta of document.querySelectorAll('meta[name=theme-color]')) meta.content = theme === 'dark' ? '#0d0e10' : '#f2f2f7';
   }
