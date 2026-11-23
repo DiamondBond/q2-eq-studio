@@ -13,7 +13,6 @@
 <script src="eq.js" defer></script>
 <script src="formats.js" defer></script>
 <script src="poweramp.js" defer></script>
-<script src="fit.js" defer></script>
 <script src="squig.js" defer></script>
 <script src="app.js" defer></script>
 </head>
@@ -50,6 +49,8 @@
   <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/></symbol>
   <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m3 17 5-5 4 4 3-3 6 6"/></symbol>
   <symbol id="i-wave" viewBox="0 0 24 24"><path d="M3 12h3l2-6 4 12 3-9 2 3h4"/></symbol>
+  <symbol id="i-response" viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M3 13c2.5 0 3-5 6-5s3.5 6 6 6 3-5 6-8"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17"/></symbol>
   <symbol id="i-fit" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
   <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
   <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
@@ -81,7 +82,8 @@
     <nav class="tabs" role="tablist" aria-label="EQ Studio">
       <button id="tab-eq" type="button" role="tab" aria-selected="true" aria-controls="view-eq" data-view="eq" aria-keyshortcuts="1"><svg class="i" aria-hidden="true"><use href="#i-eq"/></svg>EQ</button>
       <button id="tab-presets" type="button" role="tab" aria-selected="false" aria-controls="view-presets" data-view="presets" aria-keyshortcuts="2"><svg class="i" aria-hidden="true"><use href="#i-headphones"/></svg>Presets</button>
-      <button id="tab-card" type="button" role="tab" aria-selected="false" aria-controls="view-card" data-view="card" aria-keyshortcuts="3"><svg class="i" aria-hidden="true"><use href="#i-card"/></svg>Card</button>
+      <button id="tab-response" type="button" role="tab" aria-selected="false" aria-controls="view-response" data-view="response" aria-keyshortcuts="3"><svg class="i" aria-hidden="true"><use href="#i-response"/></svg>Response</button>
+      <button id="tab-card" type="button" role="tab" aria-selected="false" aria-controls="view-card" data-view="card" aria-keyshortcuts="4"><svg class="i" aria-hidden="true"><use href="#i-card"/></svg>Card</button>
     </nav>
 
     <div id="stage" class="stage">
@@ -102,7 +104,7 @@
       <div id="graphBox" class="graph">
         <canvas id="graph" tabindex="0" role="img" aria-label="The EQ's curve. The bands hold the same values; with the graph focused, the arrow keys move the picked band."></canvas>
         <p id="graphBadge" class="badge" hidden></p>
-        <p id="legend" class="legend" hidden><span class="key-l">Left</span><span class="key-r">Right</span></p>
+        <p id="legend" class="legend" hidden><span class="key-e">EQ</span><span class="key-l">Left</span><span class="key-r">Right</span><span class="key-m">Measured</span><span class="key-q">Measured + EQ</span></p>
         <p id="readout" class="readout" aria-hidden="true" hidden></p>
         <button id="fit" type="button" class="fit" title="Fit the curve (F)" aria-keyshortcuts="F" hidden><svg class="i" aria-hidden="true"><use href="#i-fit"/></svg><span id="fitText">Fit</span></button>
       </div>
@@ -112,6 +114,7 @@
         <button id="redo" type="button" class="icon-btn" aria-label="Redo" title="Redo (Ctrl+Shift+Z)" aria-keyshortcuts="Control+Shift+Z"><svg class="i" aria-hidden="true"><use href="#i-redo"/></svg></button>
         <button id="curves" type="button" class="icon-btn toggle mouse-only" aria-pressed="false" aria-label="Each band's curve" title="Each band's curve (V)" aria-keyshortcuts="V"><svg class="i" aria-hidden="true"><use href="#i-curves"/></svg></button>
         <button id="inspect" type="button" class="icon-btn toggle mouse-only" aria-pressed="false" aria-label="Inspect the curve" title="Inspect the curve (Space)" aria-keyshortcuts="Space"><svg class="i" aria-hidden="true"><use href="#i-inspect"/></svg></button>
+        <button id="shownChip" type="button" class="chip-btn shown-chip" hidden><span id="shownName"></span><svg class="i" aria-hidden="true"><use href="#i-close"/></svg></button>
         <div id="compare" class="seg compare" role="radiogroup" aria-label="What the Q2 plays" title="EQ on or off on the Q2 (C)" aria-keyshortcuts="C" hidden>
           <button type="button" role="radio" aria-checked="false" data-value="on">EQ on</button>
           <button type="button" role="radio" aria-checked="false" data-value="off">EQ off</button>
@@ -219,14 +222,6 @@
     </section>
 
     <section id="view-presets" class="view" role="tabpanel" aria-labelledby="tab-presets" hidden>
-      <div id="sources" class="seg sources" role="radiogroup" aria-label="Presets from">
-        <button type="button" role="radio" data-value="autoeq">AutoEq</button>
-        <button type="button" role="radio" data-value="squig">squig.link</button>
-      </div>
-      <div id="squigPick" class="squig-pick" hidden>
-        <label class="pick"><span>Measured by</span><select id="squigSite"></select></label>
-        <label class="pick"><span>Target</span><select id="squigTarget"></select></label>
-      </div>
       <div class="search-bar">
         <label class="search">
           <svg class="i" aria-hidden="true"><use href="#i-search"/></svg>
@@ -239,6 +234,21 @@
       <ul id="presetList" class="list"></ul>
       <button id="presetRetry" type="button" class="btn wide" hidden>Try again</button>
       <p id="credit" class="credit"></p>
+    </section>
+
+    <section id="view-response" class="view" role="tabpanel" aria-labelledby="tab-response" hidden>
+      <label class="pick"><span>Measured by</span><select id="squigSite" disabled><option>Loading…</option></select></label>
+      <div class="search-bar">
+        <label class="search">
+          <svg class="i" aria-hidden="true"><use href="#i-search"/></svg>
+          <span class="sr">Search measurements</span>
+          <input id="squigSearch" type="search" placeholder="Search" spellcheck="false" autocomplete="off" autocapitalize="off" enterkeyhint="search" aria-keyshortcuts="/">
+        </label>
+      </div>
+      <p id="squigNote" class="list-note" aria-live="polite"></p>
+      <ul id="squigList" class="list"></ul>
+      <button id="squigRetry" type="button" class="btn wide" hidden>Try again</button>
+      <p class="credit">Frequency responses from squig.link, each measured by its reviewer and read by this phone or computer as you pick it. It sits under your EQ on the graph, to show what the EQ does to it; the Q2 plays only the EQ.</p>
     </section>
 
     <section id="view-card" class="view" role="tabpanel" aria-labelledby="tab-card" hidden>
@@ -329,7 +339,7 @@
     <section>
       <h3>Anywhere</h3>
       <dl>
-        <dt><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></dt><dd>EQ, Presets, Card</dd>
+        <dt><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>4</kbd></dt><dd>EQ, Presets, Response, Card</dd>
         <dt><kbd>Space</kbd></dt><dd>Inspect the curve</dd>
         <dt><kbd data-mod>Ctrl+Z</kbd></dt><dd>Undo</dd>
         <dt><kbd data-mod>Ctrl+Shift+Z</kbd> <kbd data-mod>Ctrl+Y</kbd></dt><dd>Redo</dd>

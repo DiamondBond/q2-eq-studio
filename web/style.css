@@ -269,7 +269,9 @@ main {
   content: ""; display: inline-block; width: 12px; height: 3px; border-radius: 2px;
   margin-right: 5px; vertical-align: middle;
 }
-.key-l::before { background: var(--accent); }
+.key-l::before, .key-e::before { background: var(--accent); }
+.key-m::before { background: var(--faint); }
+.key-q::before { background: var(--text); }
 .key-r::before { background: var(--right); }
 .readout {
   position: absolute; left: 50%; top: 8px; transform: translateX(-50%);
@@ -282,6 +284,7 @@ main {
 
 .toolbar { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
 .compare { margin-left: auto; flex: 0 1 220px; }
+
 .compare button { padding: 0 10px; }
 .compare button[data-value=on][aria-checked=true] { background: var(--accent-fill); color: var(--on-accent); }
 .compare button[data-value=off][aria-checked=true] { background: var(--text); color: var(--bg); }
@@ -306,6 +309,11 @@ main {
 }
 .chip-btn:active { background: var(--fill); }
 .chip-btn .i { width: 20px; height: 20px; }
+/* The measurement under the EQ: its name, and a click takes it off. A phone's on a line of its own. */
+.toolbar { flex-wrap: wrap; }
+.shown-chip { order: 1; flex: 1 1 100%; min-width: 0; justify-content: space-between; padding: 0 4px; font-size: 15px; }
+.shown-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shown-chip .i { flex: none; color: var(--muted); }
 
 .strip {
   position: relative; display: flex; gap: 8px;
@@ -416,15 +424,6 @@ input[type=range]:focus-visible { outline-offset: 0; border-radius: 8px; }
 }
 .search input::placeholder { color: var(--muted); }
 .search input::-webkit-search-decoration { -webkit-appearance: none; }
-/* The Presets tab's source, and squig.link's reviewer and target: above the search, scrolling away. */
-.sources { margin-top: 12px; }
-.squig-pick { display: flex; gap: 10px; margin-top: 10px; }
-.pick { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
-.pick select {
-  width: 100%; min-width: 0; height: 40px; padding: 0 8px;
-  border: 0; border-radius: 10px; background: var(--fill); color: var(--text);
-  font: 500 15px var(--font); cursor: pointer;
-}
 .types { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; scrollbar-width: none; }
 .types::-webkit-scrollbar { display: none; }
 .types button {
@@ -435,6 +434,13 @@ input[type=range]:focus-visible { outline-offset: 0; border-radius: 8px; }
 .types button[aria-checked=true] { background: var(--text); border-color: var(--text); color: var(--bg); font-weight: 600; }
 
 .list-head { display: flex; align-items: center; justify-content: space-between; margin-top: 24px; }
+/* Response's reviewer: above the search, scrolling away. */
+.pick { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; font-size: 13px; color: var(--muted); }
+.pick select {
+  width: 100%; min-width: 0; height: 44px; padding: 0 8px;
+  border: 0; border-radius: 10px; background: var(--fill); color: var(--text);
+  font: 500 16px var(--font); cursor: pointer;
+}
 .list-note { margin: 6px 4px 8px; font-size: 14px; color: var(--muted); }
 .list { list-style: none; margin: 0; padding: 0; background: var(--surface); border-radius: var(--radius); overflow: hidden; }
 .list:empty { display: none; }
@@ -710,6 +716,7 @@ body.dropping::after {
   }
   .tabs button[aria-selected=true] { background: var(--seg-on); color: var(--text); }
   .tabs .i { width: 19px; height: 19px; }
+  .shown-chip { order: 0; flex: 0 1 auto; max-width: 40%; justify-content: flex-start; padding: 0 8px; }
 
   .view {
     grid-column: 1; grid-row: 2; min-height: 0;

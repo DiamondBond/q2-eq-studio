@@ -43,7 +43,7 @@
   const CHANNEL_NAMES = { all: 'Both', L: 'Left', R: 'Right' };
   const TYPE_NAMES = { PK: 'Peak', LSC: 'Low shelf', HSC: 'High shelf' };
   const KNOB_NAMES = { bass: 'Bass', treble: 'Treble' };
-  const VIEWS = ['eq', 'presets', 'card'];
+  const VIEWS = ['eq', 'presets', 'response', 'card'];
   const UNREACHABLE = "Can't reach the Q2. Check that it's on, EQ Studio is open on it, and this device is on the same Wi-Fi.";
   const MAC = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
 
@@ -631,7 +631,11 @@
   // The graph's reach follows the curve and the dots, but stands still through a drag.
   function rangeFor(points) {
     let most = 0;
-    for (const point of points) most = Math.max(most, Math.abs(point.left), Math.abs(point.right));
+    for (const point of points) {
+      most = Math.max(most, Math.abs(point.left), Math.abs(point.right));
+      // A measurement under the EQ as far as 10 kHz: past it in-ears fall away and would squash the rest.
+      if (point.m !== undefined && point.f <= 10000) most = Math.max(most, Math.abs(point.m), Math.abs(point.m + point.left), Math.abs(point.m + point.right));
+    }
     for (const band of preset.bands) if (band.on) most = Math.max(most, Math.abs(band.gain));
     return clamp(Math.ceil((most + 1) / RANGE_STEP) * RANGE_STEP, RANGE_MIN, RANGE_MAX);
   }
@@ -674,6 +678,9 @@
       const f = 10 ** (LOG_LOW + LOG_SPAN * i / (n - 1));
       points.push({ f, ...eq.response(preset, f, rate) });
     }
+    // A measurement under the EQ, on the page only: an exported picture is the EQ's.
+    const under = !still && shown;
+    if (under) for (const point of points) point.m = squigLib.at(shown.points, point.f);
     const range = !still && (drag || pinch) && scale ? scale.range : zoom ?? rangeFor(points);
     const s = {
       range, plotW, plotH, gap, points,
@@ -723,8 +730,13 @@
       context.fillText(gain > 0 ? `+${gain}` : `${gain}`.replace('-', '−'), gap.left - 5, y);
     }
 
-    // The curves: each band's own where asked, the picked band's, then the whole EQ's, faded while
-    // the Q2 isn't playing it.
+    // The curves: the measurement as measured, faint; each band's own where asked, the picked band's,
+    // the whole EQ's, and the measurement with it, bold, these faded while the Q2 isn't playing it.
+    context.lineJoin = 'round';
+    if (under) {
+      context.lineWidth = 1.5;
+      curve(context, s, points.map((point) => ({ f: point.f, gain: point.m })), 'gain', colours.faint);
+    }
     context.save();
     context.lineJoin = 'round';
     if (!still && live.on && live.mode !== 'peq') context.globalAlpha = 0.4;
@@ -747,12 +759,21 @@
       context.setLineDash([]);
     }
     const split = points.some((point) => Math.abs(point.left - point.right) > 0.01);
-    context.lineWidth = 2.5;
+    context.lineWidth = under ? 2 : 2.5;
     if (split) {
       curve(context, s, points, 'right', colours.right);
       curve(context, s, points, 'left', colours.accent);
     } else {
-      curve(context, s, points, 'left', colours.accent, 0.14);
+      curve(context, s, points, 'left', colours.accent, under ? 0.1 : 0.14);
+    }
+    if (under) {
+      context.lineWidth = 2.5;
+      curve(context, s, points.map((point) => ({ f: point.f, gain: point.m + point.left })), 'gain', colours.text);
+      if (split) {
+        context.setLineDash([6, 4]);
+        curve(context, s, points.map((point) => ({ f: point.f, gain: point.m + point.right })), 'gain', colours.text);
+        context.setLineDash([]);
+      }
     }
     context.restore();
 
@@ -908,7 +929,12 @@
       context.clearRect(0, 0, w, h);
       scale = plot(context, w, h);
     }
-    $('legend').hidden = !scale.points.some((point) => Math.abs(point.left - point.right) > 0.01);
+    const split = scale.points.some((point) => Math.abs(point.left - point.right) > 0.01);
+    const legend = $('legend');
+    legend.hidden = !split && !shown;
+    legend.querySelector('.key-e').hidden = split || !shown;
+    for (const key of legend.querySelectorAll('.key-l, .key-r')) key.hidden = !split;
+    for (const key of legend.querySelectorAll('.key-m, .key-q')) key.hidden = !shown;
     $('fit').hidden = zoom === null;
 
     // What a drag or a pinch is setting, where the finger isn't.
@@ -1345,7 +1371,7 @@
 
   /* ---------- Presets ---------- */
 
-  const catalogue = { items: null, loading: false, type: '', chosen: -1, credit: '' };
+  const catalogue = { items: null, loading: false, type: '', chosen: -1 };
 
   async function loadCatalogue() {
     if (catalogue.items || catalogue.loading) return;
@@ -1357,7 +1383,8 @@
       if (!response.ok) throw new Error(problem(response, await json(response)));
       const { credit, presets } = await response.json();
       catalogue.items = presets.map((item, index) => ({ ...item, index, find: `${item.name} ${item.source} ${item.type}`.toLowerCase() }));
-      catalogue.credit = credit;
+      $('credit').textContent = credit;
+      $('search').placeholder = `Search ${count(presets.length)} headphones`;
       const kinds = {};
       for (const item of presets) kinds[item.type] = (kinds[item.type] || 0) + 1;
       const types = $('types');
@@ -1370,7 +1397,6 @@
       }
       renderPresets();
     } catch (error) {
-      if (squig.on) return;
       $('presetNote').textContent = `The presets couldn't be loaded. ${error.name === 'Error' ? error.message : reason(error)}`;
       $('presetRetry').hidden = false;
     }
@@ -1380,14 +1406,7 @@
   // The popular few before a search. A search wants every word, in any order, in the name, the
   // measurement's source or the kind.
   function renderPresets() {
-    if (squig.on) return renderSquig();
-    $('search').placeholder = catalogue.items ? `Search ${count(catalogue.items.length)} headphones` : 'Search headphones';
-    $('credit').textContent = catalogue.credit;
-    if (!catalogue.items) {
-      $('presetList').textContent = '';
-      if (!catalogue.loading) loadCatalogue();
-      return;
-    }
+    if (!catalogue.items) return;
     const words = $('search').value.toLowerCase().split(/\s+/).filter(Boolean);
     const { type } = catalogue;
     let found = catalogue.items.filter((item) => (!type || item.type === type) && words.every((word) => item.find.includes(word)));
@@ -1417,118 +1436,106 @@
   }
 
   function markChosen() {
-    const book = squig.on && squig.sites ? squig.books.get(squigSite().id) : null;
     for (const button of $('presetList').querySelectorAll('.row')) {
-      const phone = book?.[Number(button.dataset.squig)];
-      const item = catalogue.items?.[Number(button.dataset.index)];
-      const on = phone ? squig.chosen === `${squigSite().id}|${phone.file}` && eq.cleanName(phone.name) === preset.name
-        : !!item && item.index === catalogue.chosen && eq.cleanName(item.name) === preset.name;
+      const item = catalogue.items[Number(button.dataset.index)];
+      const on = item.index === catalogue.chosen && eq.cleanName(item.name) === preset.name;
       if (on) button.setAttribute('aria-current', 'true');
       else button.removeAttribute('aria-current');
     }
   }
 
-  /* ---------- squig.link ---------- */
+  /* ---------- Response: a measurement under the EQ ---------- */
 
-  // Reviewers' measurements on squig.link, read by this phone or computer (the Q2 has no part in it),
-  // each fitted here to a target as it's picked. The source, reviewer and target are kept.
+  // A reviewer's measurement of an earphone or headphone, from squig.link, drawn under the EQ and with
+  // the EQ added to it: what the EQ does to that earphone. Read by this phone or computer (the Q2 has
+  // no part in it) and only shown: the EQ, the card and the Q2 never see it. Kept for the next visit.
   const squigLib = window.Q2Squig;
-  const fitLib = window.Q2Fit;
-  const SQUIG_KEY = 'eq-studio-squig';
-  const SQUIG_MAX = 4 << 20; // a phone book is a few hundred KB, a measurement tens
+  const SHOWN_KEY = 'eq-studio-response';
+  const SQUIG_MAX = 4 << 20; // the biggest phone book is about 300 KB, a measurement tens
   const SQUIG_MS = 20000;
-  const squig = { on: false, site: 'superreview/', target: squigLib.TARGETS[0], sites: null, books: new Map(), targets: new Map(), loading: false, busy: false, error: '', chosen: '' };
-  try {
-    const kept = JSON.parse(localStorage.getItem(SQUIG_KEY));
-    if (kept?.on === true) squig.on = true;
-    if (typeof kept?.site === 'string') squig.site = kept.site;
-    if (squigLib.TARGETS.includes(kept?.target)) squig.target = kept.target;
-  } catch {
-    // Not kept: AutoEq, and Super* Review to Harman.
-  }
+  const squig = { sites: null, site: 'superreview/', books: new Map(), layouts: new Map(), loading: false, error: '', busy: false, asked: 0 };
+  let shown = null; // { base, file, name, by, points }
+
   function keepSquig() {
     try {
-      localStorage.setItem(SQUIG_KEY, JSON.stringify({ on: squig.on, site: squig.site, target: squig.target }));
+      const pick = shown && { base: shown.base, file: shown.file, name: shown.name, by: shown.by };
+      localStorage.setItem(SHOWN_KEY, JSON.stringify({ site: squig.site, shown: pick }));
     } catch {
       // Private browsing: kept for this visit only.
     }
   }
 
-  const squigSite = () => squig.sites.find((site) => site.id === squig.site)
-    ?? squig.sites.find((site) => site.id === 'superreview/') ?? squig.sites[0];
-
   // A file from squig.link, fetched as a page fetches a picture: no cookies, no referrer, a time limit.
-  async function squigText(url) {
+  async function squigText(url, what) {
     const response = await fetch(url, { credentials: 'omit', referrerPolicy: 'no-referrer', signal: AbortSignal.timeout(SQUIG_MS) });
-    if (!response.ok) throw Object.assign(new Error(`squig.link answered ${response.status}.`), { status: response.status });
+    if (!response.ok) {
+      throw Object.assign(new Error(response.status === 404 ? `squig.link doesn't have ${what}.` : `squig.link answered ${response.status} for ${what}.`), { status: response.status });
+    }
+    const big = `squig.link sent far more than ${what} should be.`;
+    if (Number(response.headers.get('content-length')) > SQUIG_MAX) throw new Error(big);
     const text = await response.text();
-    if (text.length > SQUIG_MAX) throw new Error('squig.link sent far more than a measurement.');
+    if (text.length > SQUIG_MAX) throw new Error(big);
     return text;
   }
 
-  const squigReason = (error) => (error?.status === 404 ? "squig.link doesn't have that measurement."
-    : error?.status ? error.message
-      : error?.name === 'TimeoutError' ? "squig.link didn't answer in time."
-        : error instanceof SyntaxError ? "squig.link's answer couldn't be read."
-          : error?.message?.startsWith('squig.link') || error?.message?.startsWith('There is') ? error.message
-            : "squig.link couldn't be reached. It's read from this phone or computer, so this needs its internet.");
+  const squigReason = (error) => (error?.name === 'TimeoutError' ? "squig.link didn't answer in time."
+    : error instanceof SyntaxError ? "squig.link's answer couldn't be read."
+      : error instanceof TypeError ? "squig.link couldn't be reached. This phone or computer reads it, not the Q2, so it needs the internet."
+        : error?.message || String(error));
 
-  async function squigTarget(name) {
-    if (!squig.targets.has(name)) squig.targets.set(name, fitLib.readCurve(await squigText(squigLib.targetUrl(name))));
-    return squig.targets.get(name);
-  }
+  const squigSite = () => squig.sites.find((site) => site.id === squig.site)
+    ?? squig.sites.find((site) => site.id === 'superreview/') ?? squig.sites[0];
 
-  function setSource(name) {
-    squig.on = name === 'squig';
-    keepSquig();
-    radios($('sources'), squig.on ? 'squig' : 'autoeq');
-    $('types').hidden = squig.on;
-    $('squigPick').hidden = !squig.on;
-    $('presetRetry').hidden = true;
-    if (squig.on) loadSquig();
-    renderPresets();
-  }
-
-  // The reviewers, once a visit, then the chosen one's phone book, once each.
+  // The reviewers once a visit, grouped by kind, then the picked one's list, once each.
   async function loadSquig() {
     if (squig.loading) return;
-    squig.error = '';
     squig.loading = true;
+    squig.error = '';
     renderSquig();
     try {
       if (!squig.sites) {
-        squig.sites = squigLib.sites(JSON.parse(await squigText(squigLib.SITES)));
-        if (!squig.sites.length) throw new Error('squig.link listed no reviewers.');
+        const sites = squigLib.sites(JSON.parse(await squigText(squigLib.SITES, 'its list of reviewers')));
+        if (!sites.length) throw new Error('squig.link listed no reviewers.');
+        squig.sites = sites;
         const select = $('squigSite');
         select.textContent = '';
-        for (const site of squig.sites) select.append(new Option(site.name, site.id));
+        for (const [kind, label] of squigLib.KINDS) {
+          const group = document.createElement('optgroup');
+          group.label = label;
+          for (const site of sites) if (site.kind === kind) group.append(new Option(site.name, site.id));
+          if (group.children.length) select.append(group);
+        }
       }
       const site = squigSite();
       $('squigSite').value = site.id;
-      if (!squig.books.has(site.id)) squig.books.set(site.id, squigLib.phones(JSON.parse(await squigText(squigLib.bookUrl(site)))));
+      if (!squig.books.has(site.id)) {
+        squig.books.set(site.id, squigLib.phones(JSON.parse(await squigText(squigLib.bookUrl(site.base), `${site.name}'s list`))));
+      }
     } catch (error) {
-      if (!squig.sites?.length) squig.sites = null;
       squig.error = squigReason(error);
     }
     squig.loading = false;
-    renderSquig();
+    // Another reviewer picked while this one loaded.
+    if (!squig.error && !squig.books.has(squigSite().id)) loadSquig();
+    else renderSquig();
   }
 
+  const kindWord = (site) => (site.kind === '5128' ? 'measurements' : site.kind === 'IEMs' ? 'in-ears' : site.kind.toLowerCase());
+
+  // A search wants every word, in any order, in the name.
   function renderSquig() {
-    const list = $('presetList');
     const site = squig.sites && squigSite();
     const phones = site && squig.books.get(site.id);
-    $('presetRetry').hidden = !squig.error;
-    $('credit').textContent = site ? `Measurements by ${site.name}, on squig.link. Each EQ is fitted on this device to the target, `
-      + 'as AutoEq shapes one: a low shelf, a high shelf and peaks, nothing past 10 kHz, no boost over 6 dB.' : '';
+    const list = $('squigList');
+    $('squigSite').disabled = !squig.sites;
+    $('squigRetry').hidden = !squig.error;
+    list.textContent = '';
     if (!phones) {
-      list.textContent = '';
-      $('search').placeholder = 'Search in-ears';
-      $('presetNote').textContent = squig.error || (site ? `Loading ${site.name}'s in-ears from squig.link…` : "Loading squig.link's reviewers…");
+      $('squigSearch').placeholder = 'Search';
+      $('squigNote').textContent = squig.error || (site ? `Loading ${site.name}'s list from squig.link…` : 'Loading the reviewers from squig.link…');
       return;
     }
-    $('search').placeholder = `Search ${count(phones.length)} in-ears`;
-    const words = $('search').value.toLowerCase().split(/\s+/).filter(Boolean);
+    const words = $('squigSearch').value.toLowerCase().split(/\s+/).filter(Boolean);
     const found = [];
     phones.forEach((phone, index) => {
       if (words.every((word) => phone.find.includes(word))) found.push(index);
@@ -1536,54 +1543,114 @@
     const rows = document.createDocumentFragment();
     for (const index of found.slice(0, PRESET_ROWS)) {
       const row = document.createElement('li');
-      row.innerHTML = '<button type="button" class="row"><span class="row-text"><span class="t"></span><span class="s"></span></span>'
+      row.innerHTML = '<button type="button" class="row"><span class="row-text"><span class="t"></span></span>'
         + '<svg class="i" aria-hidden="true"><use href="#i-check"/></svg></button>';
-      const button = row.firstChild;
-      button.dataset.squig = index;
-      button.querySelector('.t').textContent = phones[index].name;
-      button.querySelector('.s').textContent = `${site.name} · squig.link`;
+      row.firstChild.dataset.phone = index;
+      row.querySelector('.t').textContent = phones[index].name;
       rows.append(row);
     }
-    list.textContent = '';
     list.append(rows);
-    markChosen();
-    $('presetNote').textContent = squig.error || (!found.length ? 'No match. Try fewer words, or another reviewer.'
-      : words.length ? (found.length > PRESET_ROWS ? `The first ${PRESET_ROWS} of ${count(found.length)} matches. Add a word to narrow it.`
-        : `${count(found.length)} ${found.length === 1 ? 'match' : 'matches'}.`)
-        : `${site.name} measured ${count(found.length)} in-ears${found.length > PRESET_ROWS ? `, the first ${PRESET_ROWS} here: search for the rest` : ''}. `
-          + `Pick one to fit it to ${squig.target}.`);
+    markShown();
+    const word = kindWord(site);
+    $('squigSearch').placeholder = `Search ${count(phones.length)} ${word}`;
+    $('squigNote').textContent = squig.error || (words.length
+      ? (!found.length ? 'No match. Try fewer words, or another reviewer.'
+        : found.length > PRESET_ROWS ? `The first ${PRESET_ROWS} of ${count(found.length)} matches. Add a word to narrow it.`
+          : `${count(found.length)} ${found.length === 1 ? 'match' : 'matches'}.`)
+      : `${site.name} measured ${count(phones.length)} ${word}${phones.length > PRESET_ROWS ? `, the first ${PRESET_ROWS} here: search for the rest` : ''}. `
+        + 'Pick one to see it under your EQ.');
   }
 
-  // An earphone picked: its sides' measurements and the target fetched, the EQ fitted, and loaded as a
-  // preset would be.
+  function markShown() {
+    const phones = squig.sites && squig.books.get(squigSite().id);
+    for (const button of $('squigList').querySelectorAll('.row')) {
+      const phone = phones?.[Number(button.dataset.phone)];
+      const on = !!shown && !!phone && shown.base === squigSite().base && shown.file === phone.file;
+      if (on) button.setAttribute('aria-current', 'true');
+      else button.removeAttribute('aria-current');
+    }
+  }
+
+  function syncShown() {
+    const chip = $('shownChip');
+    chip.hidden = !shown;
+    $('shownName').textContent = shown?.name ?? '';
+    chip.title = shown ? `${shown.name}, measured by ${shown.by}. Take it off the graph.` : '';
+    chip.setAttribute('aria-label', shown ? `Take ${shown.name} off the graph` : '');
+    markShown();
+    invalidate();
+  }
+
+  // A measurement's sides, averaged, from wherever its site keeps them: the layout found last time
+  // there first.
+  async function showMeasurement(pick) {
+    const asked = ++squig.asked;
+    const known = squig.layouts.get(pick.base) ?? 0;
+    const order = [known, ...squigLib.LAYOUTS.keys()].filter((k, i, all) => all.indexOf(k) === i);
+    for (const k of order) {
+      const urls = squigLib.sideUrls(pick.base, pick.file, squigLib.LAYOUTS[k]);
+      const sides = await Promise.allSettled(urls.map((url) => squigText(url, 'that measurement')));
+      const curves = sides.filter((side) => side.status === 'fulfilled').map((side) => squigLib.readCurve(side.value))
+        .filter((points) => points.length >= 2);
+      if (curves.length) {
+        squig.layouts.set(pick.base, k);
+        if (asked !== squig.asked) return false;
+        shown = { ...pick, points: squigLib.average(curves) };
+        keepSquig();
+        syncShown();
+        return true;
+      }
+      const failed = sides.find((side) => side.status === 'rejected' && side.reason?.status !== 404);
+      if (failed) throw failed.reason;
+    }
+    throw new Error(`squig.link doesn't have ${pick.name}'s measurement.`);
+  }
+
   async function pickSquig(index) {
     const site = squigSite();
     const phone = squig.books.get(site.id)?.[index];
     if (!phone || squig.busy) return;
     squig.busy = true;
-    squig.error = '';
-    $('presetList').setAttribute('aria-busy', 'true');
-    $('presetNote').textContent = `Fitting ${phone.name} to ${squig.target}…`;
+    $('squigList').setAttribute('aria-busy', 'true');
+    $('squigNote').textContent = `Loading ${phone.name}…`;
     try {
-      const [sides, target] = await Promise.all([
-        Promise.allSettled(squigLib.sideUrls(site, phone.file).map(squigText)),
-        squigTarget(squig.target),
-      ]);
-      const measurement = sides.filter((side) => side.status === 'fulfilled').map((side) => fitLib.readCurve(side.value))
-        .filter((points) => points.length >= 2);
-      if (!measurement.length) throw sides.find((side) => side.status === 'rejected')?.reason ?? new Error('There is no measurement in its files.');
-      await new Promise((resolve) => { setTimeout(resolve, 30); }); // the note shows before the fit's work
-      const { bands } = fitLib.fit({ measurement, target });
-      const name = eq.cleanName(phone.name);
-      if (load({ ok: true, preset: { name, auto: true, preamp: 0, balance: 0, bands }, notes: [] }, `from ${site.name}'s measurement`)) {
-        squig.chosen = `${site.id}|${phone.file}`;
+      if (await showMeasurement({ base: site.base, file: phone.file, name: phone.name, by: site.name })) {
+        // A phone shows the graph on the EQ tab alone.
+        if (!wide.matches) show('eq');
+        toast(`${phone.name} is on the graph, under your EQ.`);
       }
     } catch (error) {
-      notice(`${phone.name} couldn't be fitted`, squigReason(error));
+      notice(`${phone.name} couldn't be loaded`, squigReason(error));
     }
     squig.busy = false;
-    $('presetList').removeAttribute('aria-busy');
+    $('squigList').removeAttribute('aria-busy');
     renderSquig();
+  }
+
+  function clearShown() {
+    if (!shown) return;
+    const { name } = shown;
+    shown = null;
+    squig.asked += 1;
+    keepSquig();
+    syncShown();
+    toast(`${name} is off the graph.`);
+  }
+
+  // Last visit's reviewer, and its measurement fetched again.
+  function restoreShown() {
+    let kept;
+    try {
+      kept = JSON.parse(localStorage.getItem(SHOWN_KEY));
+    } catch {
+      return;
+    }
+    if (typeof kept?.site === 'string') squig.site = kept.site;
+    const pick = kept?.shown;
+    if (typeof pick?.file !== 'string' || typeof pick.name !== 'string'
+      || !/^https:\/\/([a-z0-9-]+\.)?squig\.link\/([\w-]+\/)*$/i.test(String(pick.base))) return;
+    showMeasurement({ base: pick.base, file: pick.file, name: pick.name, by: String(pick.by ?? 'its reviewer') })
+      .catch((error) => toast(`${pick.name} couldn't be put under the EQ. ${squigReason(error)}`));
   }
 
   /* ---------- The card ---------- */
@@ -1921,7 +1988,8 @@
     else window.scrollTo(0, scrolls[name] || 0);
     closeMenu();
     invalidate();
-    if (name === 'presets') setSource(squig.on ? 'squig' : 'autoeq');
+    if (name === 'presets') loadCatalogue();
+    if (name === 'response') loadSquig();
     if (name === 'card') readCard();
   }
 
@@ -2067,7 +2135,7 @@
     }
     // The tabs, the list and search anywhere; the rest is the graph's, and a phone's Presets and Card
     // have none.
-    if (!wide.matches && view !== 'eq' && !['1', '2', '3', '?', '/'].includes(key)) return;
+    if (!wide.matches && view !== 'eq' && !['1', '2', '3', '4', '?', '/'].includes(key)) return;
     // Space where nothing else takes it, the page or the graph. The arrows there too, or on a plain
     // button a click left focused, when the graph is under the mouse or the EQ tab beside it; else
     // they scroll.
@@ -2079,9 +2147,12 @@
     const fine = event.shiftKey;
     const nudgeKey = `key:${band}:${key}`;
     switch (key) {
-      case '1': case '2': case '3': show(VIEWS[Number(key) - 1]); break;
+      case '1': case '2': case '3': case '4': show(VIEWS[Number(key) - 1]); break;
       case '?': if (once) $('dlgKeys').showModal(); break;
-      case '/': show('presets'); $('search').focus(); break;
+      case '/':
+        if (view !== 'response') show('presets');
+        $(view === 'response' ? 'squigSearch' : 'search').focus();
+        break;
       case ' ': if (!free) return; if (once) toggleInspect(); break;
       case 'q': case 'Q': case 'w': case 'W': case 'e': case 'E':
         if (!preset.bands[band]) return;
@@ -2324,33 +2395,27 @@
     $('presetList').addEventListener('click', (event) => {
       const button = event.target.closest('.row');
       if (!button) return;
-      if (button.dataset.squig !== undefined) {
-        pickSquig(Number(button.dataset.squig));
-        return;
-      }
       const item = catalogue.items[Number(button.dataset.index)];
       if (load(eq.parse(item.text, item.name), 'from AutoEq')) {
         catalogue.chosen = item.index;
         markChosen();
       }
     });
-    $('presetRetry').addEventListener('click', () => (squig.on ? loadSquig() : loadCatalogue()));
-    $('sources').addEventListener('click', (event) => {
-      const button = event.target.closest('[data-value]');
-      if (button) setSource(button.dataset.value);
-    });
+    $('presetRetry').addEventListener('click', loadCatalogue);
+
     $('squigSite').addEventListener('change', (event) => {
       squig.site = event.target.value;
       keepSquig();
       loadSquig();
     });
-    for (const name of squigLib.TARGETS) $('squigTarget').append(new Option(name, name));
-    $('squigTarget').value = squig.target;
-    $('squigTarget').addEventListener('change', (event) => {
-      squig.target = event.target.value;
-      keepSquig();
-      renderSquig();
+    $('squigSearch').addEventListener('input', renderSquig);
+    $('squigSearch').addEventListener('keydown', (event) => { if (event.key === 'Enter') event.target.blur(); });
+    $('squigList').addEventListener('click', (event) => {
+      const button = event.target.closest('.row');
+      if (button) pickSquig(Number(button.dataset.phone));
     });
+    $('squigRetry').addEventListener('click', loadSquig);
+    $('shownChip').addEventListener('click', clearShown);
 
     $('cardRefresh').addEventListener('click', readCard);
     $('cardList').addEventListener('click', (event) => {
@@ -2480,6 +2545,7 @@
       element.setAttribute('aria-keyshortcuts', element.getAttribute('aria-keyshortcuts').replace('Control+', 'Meta+'));
     }
   }
+  restoreShown();
   show(VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'eq', true);
   readState(true);
 })();

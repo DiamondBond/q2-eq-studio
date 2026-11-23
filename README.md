@@ -26,7 +26,7 @@ On the graph, drag a dot to move a band (with Shift, finer), turn the wheel on a
 
 | Keys | Do |
 | --- | --- |
-| 1, 2, 3 | EQ, Presets, Card |
+| 1, 2, 3, 4 | EQ, Presets, Response, Card |
 | Space | Inspect the curve: a line at the mouse, and the gain there |
 | Q, W, E | The band under the mouse (or the picked one): peak, low shelf, high shelf |
 | S, D (or Delete, Backspace) | That band on or off; delete it |
@@ -47,11 +47,11 @@ On the graph, drag a dot to move a band (with Shift, finer), turn the wheel on a
 
 The theme button beside Save picks light, dark or the system's, on phones too.
 
-### squig.link
+### Response: an earphone under the EQ
 
-The Presets tab's **squig.link** switch reads reviewers' measurements of in-ears from [squig.link](https://squig.link): pick who measured (Super* Review first, or any of the hundred-odd others there), search their in-ears, and pick one. The phone or computer fetches its measurement and fits an EQ to the target picked (Harman IE 2019, Super 22, Crinacle 2023 Adjusted or Δ 10dB) as AutoEq shapes one: a low shelf at 105 Hz, a high shelf at 10 kHz and peaks between, nothing past 10 kHz, treble cuts to 6 dB and boosts to 6 dB, the preamp Auto. It plays and saves as any preset does.
+The **Response** tab shows how an earphone or headphone measures, and what your EQ does to it. Pick who measured it (any reviewer on [squig.link](https://squig.link), Super* Review first, in-ears, headphones and earbuds), search, and pick one: the graph draws its frequency response in grey and the response with your EQ in bold, over the EQ's own curve. Edit the bands and the bold line follows. A phone goes to the EQ tab to show it; on a computer it's beside the list. The name under the graph takes it off.
 
-squig.link is read by the phone or computer, not the Q2, so this needs its internet; the AutoEq presets on the card need none. The reviewer, target and switch are kept for the next visit.
+It's only drawn: the Q2 plays the EQ, and the measurement is never saved or sent to it. The phone or computer reads squig.link itself, so this needs its internet; the rest of EQ Studio needs none. The earphone stays on the graph for the next visit.
 
 ### Live EQ
 
@@ -96,8 +96,8 @@ It prints the address with the key. Live EQ answers once a `q2-addon.caps` holdi
 - **Q2 Theme Studio** by Tyler ([tyleree](https://github.com/tyleree)), GPL-3.0: the page's EQ (`web/`) is its EQ tab, made for a phone.
 - **PEQdB Studio** ([peqdb.com/studio](https://peqdb.com/studio)): the computer's layout, its keys and its mouse follow it. No code of it is here.
 - **File Browser** by group-a-study ([q2-filebrowser](https://github.com/group-a-study/q2-filebrowser)), MIT: the Q2 glue (`internal/`, `build.sh`, `tools/package.py`, `card/run`) and the sign-in. Its licence is `internal/LICENSE`.
-- **AutoEq** by Jaakko Pasanen, MIT (`data/AUTOEQ-LICENSE.txt`): the presets, computed from measurements by Crinacle, oratory1990 and others. `web/fit.js` follows its shape for an EQ; its code is its own.
-- **squig.link** and its reviewers: the measurements and targets the squig.link switch reads, each reviewer's own, fetched as they're picked and never kept here.
+- **AutoEq** by Jaakko Pasanen, MIT (`data/AUTOEQ-LICENSE.txt`): the presets, computed from measurements by Crinacle, oratory1990 and others.
+- **squig.link** and its reviewers: the measurements under Response, each its reviewer's, read from squig.link as they're picked and not kept here.
 
 ## Licence
 
