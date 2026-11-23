@@ -39,11 +39,13 @@
   // so the curve's loudest point is 0 dB, as AutoEq writes it.
   function wavelet(input) {
     const preset = eq.normalize(input);
-    const [first] = sides(preset, WAVELET_RATE);
+    const lists = sides(preset, WAVELET_RATE);
+    // Bands on the right alone: the right's curve, not a flat left.
+    const side = lists.length > 1 && !lists[0].filters.length ? 'right' : 'left';
     const notes = [];
-    if (first.side !== 'all') notes.push("Wavelet's EQ is the same on both sides, so this is the left side's.");
+    if (lists.length > 1) notes.push(`Wavelet's EQ is the same on both sides, so this is the ${side} side's.`);
     if (preset.balance) notes.push("Wavelet has its own balance, so this one isn't in it.");
-    const gains = WAVELET_FREQS.map((f) => eq.response(preset, f, WAVELET_RATE).left);
+    const gains = WAVELET_FREQS.map((f) => eq.response(preset, f, WAVELET_RATE)[side]);
     const top = Math.max(...gains);
     const points = WAVELET_FREQS.map((f, index) => `${f} ${(Math.round((gains[index] - top) * 10) / 10 || 0).toFixed(1)}`);
     return { text: `GraphicEQ: ${points.join('; ')}\n`, notes };
@@ -67,7 +69,8 @@
     const blocks = lists.map(({ side, filters }) => {
       const text = filters.map((f, index) => `biquad${index + 1},\nb0=${coefficient(f.b0)},\nb1=${coefficient(f.b1)},\nb2=${coefficient(f.b2)},\n`
         + `a1=${coefficient(-f.a1)},\na2=${coefficient(-f.a2)}`).join(',\n');
-      return side === 'all' ? text : `${side === 'L' ? 'Left' : 'Right'}\n${text}`;
+      const name = side === 'L' ? 'Left' : 'Right';
+      return side === 'all' ? text : `${name}\n${text || `None: the ${name.toLowerCase()} side is flat.`}`;
     });
     return { text: `${blocks.join('\n\n')}\n`, notes, count: Math.max(...lists.map(({ filters }) => filters.length)) };
   }

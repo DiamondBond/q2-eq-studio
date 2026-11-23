@@ -55,6 +55,16 @@ test("Wavelet says it has the left side's curve when the sides differ, and no ba
   assert.ok(at(1032) < at(103) - 2); // the left's bump at 100 Hz, not the right's at 1 kHz
 });
 
+test("bands on the right alone: Wavelet has the right's curve, and the biquads' left says it's flat", () => {
+  const preset = presetOf([band({ freq: 1000, gain: 6, channel: 'R' })]);
+  const { text, notes } = formats.wavelet(preset);
+  assert.match(notes[0], /right side's/);
+  assert.ok(/ 20 (-\S+);/.test(text) && Number(/ 20 (\S+);/.exec(text)[1]) < -5); // the bump at 1 kHz is 0 dB, 20 Hz under it
+  const [left, right] = formats.biquads(preset, 48000).text.split('\n\n');
+  assert.equal(left, 'Left\nNone: the left side is flat.');
+  assert.equal(readBiquads(right).length, 1);
+});
+
 test("miniDSP's biquads read back as the Q2's curve, a1 and a2 negated", () => {
   const preset = presetOf(SHELVES, { auto: false, preamp: -6.5 });
   for (const rate of [48000, 96000]) {

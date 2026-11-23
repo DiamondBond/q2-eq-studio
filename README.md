@@ -30,8 +30,8 @@ On the graph, drag a dot to move a band (with Shift, finer), turn the wheel on a
 | S, D | That band on or off; delete it |
 | A | Add a band, at the mouse on the graph |
 | [, ] | Pick the band before, after |
-| ←, →, ↑, ↓ | The picked band's frequency and gain (with Shift, finer) |
-| `,`, `.` | Its Q, wider or narrower |
+| ←, →, ↑, ↓ | With the graph focused or under the mouse, the band's frequency and gain (with Shift, finer) |
+| `,`, `.` | The band's Q, wider or narrower |
 | B | Every band off, or on |
 | V | Each band's own curve |
 | C | EQ on or off on the Q2 |
@@ -52,7 +52,7 @@ Without it, the phone is an editor: save a preset to the card's `EQ` folder, the
 
 ### Bass and treble, and Poweramp's presets
 
-**Bass** and **Treble** are Poweramp's knobs: Bass a low shelf at 90 Hz, Q 0.8, Treble a high shelf at 10 kHz, Q 0.6, their sliders 0 to +15 dB as Poweramp's turn. Each is a band of its own, named on its chip, so it goes to the Q2 and into a saved preset as any band does; its dot on the graph moves only up and down, as the knob turns, and at 0 its band goes. The Q2's filters are peaks and shelves, so a knob is the shelf Poweramp's settings describe, close to Poweramp's sound but not checked against it.
+**Bass** and **Treble**, folded under their title until it's opened, are Poweramp's knobs: Bass a low shelf at 90 Hz, Q 0.8, Treble a high shelf at 10 kHz, Q 0.6, their sliders 0 to +15 dB as Poweramp's turn. Each is a band of its own, named on its chip, so it goes to the Q2 and into a saved preset as any band does; its dot on the graph moves only up and down, as the knob turns, and at 0 its band goes. The Q2's filters are peaks and shelves, so a knob is the shelf Poweramp's settings describe, close to Poweramp's sound but not checked against it.
 
 **Open file** and **Paste** on the Card tab (and Ctrl+V) also take a preset exported from Poweramp (its `.json`): its bands and preamp, and Bass and Treble as those shelves, at the frequency and Q the file gives. What the Q2 can't take is said when the preset opens, and so is a preamp too small for the Q2, as Poweramp's often are: bands for one side only (the file doesn't say which side), more than 30 bands, values past the Q2's ranges. Poweramp's graphic-EQ presets aren't read: turn on its parametric EQ and export again.
 
