@@ -22,14 +22,14 @@ The Q2 stays awake while the phone is in use, and EQ Studio turns itself off aft
 
 A window 960 pixels wide or more shows the computer's layout: the tabs in a sidebar and the graph beside them, so a preset picked under Presets shows on the graph as it plays. The bands are a table, each value typed in place (`1.2k` is 1200 Hz) or stepped with ↑ and ↓, Enter going down a row. Narrow the window and it's the phone's layout again, with the same preset, history and band picked.
 
-On the graph, drag a dot to move a band (with Shift, finer), turn the wheel on a dot for its Q, turn it elsewhere to zoom the dB scale, and click the 0 dB line to add a band there and drag it. A preset's file dropped on the page opens. The keys are PEQdB Studio's where it has them; **?** lists them.
+On the graph, drag a dot to move a band (with Shift, finer), turn the wheel on a dot for its Q (with Shift, finer), turn it elsewhere to zoom the dB scale, click the 0 dB line to add a band there and drag it, or double-click to add one. A preset's file dropped on the page opens. The keys are PEQdB Studio's where it has them; **?** lists them.
 
 | Keys | Do |
 | --- | --- |
 | 1, 2, 3 | EQ, Presets, Card |
 | Space | Inspect the curve: a line at the mouse, and the gain there |
 | Q, W, E | The band under the mouse (or the picked one): peak, low shelf, high shelf |
-| S, D (or Delete) | That band on or off; delete it |
+| S, D (or Delete, Backspace) | That band on or off; delete it |
 | A (or +) | Add a band, at the mouse on the graph |
 | [, ] | Pick the band before, after |
 | ←, →, ↑, ↓ | With the graph focused or under the mouse, the band's frequency and gain (with Shift, finer) |

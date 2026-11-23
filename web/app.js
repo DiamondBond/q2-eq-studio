@@ -1111,7 +1111,11 @@
     const index = dotAt(pointerAt(event), 'mouse');
     if (index >= 0) {
       const now = event.timeStamp;
-      if (!wheelQ || wheelQ.index !== index || now - wheelQ.at > 600) wheelQ = { index, q: preset.bands[index].q, start: now };
+      if (!wheelQ || wheelQ.index !== index || now - wheelQ.at > 600) {
+        wheelQ = { index, q: preset.bands[index].q, start: now };
+        const knob = pa.knobOf(preset.bands[index]);
+        if (knob) toast(`${KNOB_NAMES[knob]} is Poweramp's knob: its Q stays.`);
+      }
       wheelQ.at = now;
       wheelQ.q = clamp(wheelQ.q * Math.exp(-delta * WHEEL_Q * (event.shiftKey ? 0.25 : 1)), eq.Q_MIN, eq.Q_MAX);
       pick(index);
@@ -1863,6 +1867,15 @@
       // A band's box is the app's: its undo is the app's, not the box's text.
       const box = target.classList?.contains('tin');
       const typing = typingIn(target) && !box;
+      const boxBand = box && preset.bands[indexOf(target)];
+      if (boxBand && letter === 'z' && !event.shiftKey
+        && target.value !== decimals(boxBand[target.dataset.field], FIELD_DIGITS[target.dataset.field])) {
+        // Half-typed: the first Ctrl+Z drops the typing, as the box's own would.
+        target.value = decimals(boxBand[target.dataset.field], FIELD_DIGITS[target.dataset.field]);
+        target.select();
+        event.preventDefault();
+        return;
+      }
       if (letter === 's' && !event.shiftKey) openSave();
       else if (letter === 'o' && !event.shiftKey) $('fileIn').click();
       else if (typing || (box && letter === 'c')) return;
