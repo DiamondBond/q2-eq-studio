@@ -556,6 +556,7 @@ kbd {
 }
 
 .menu {
+  scroll-margin: 16px 0 calc(var(--nav-h) + env(safe-area-inset-bottom) + 16px);
   position: absolute; right: 0; top: calc(100% + 4px); z-index: 25;
   width: max-content; min-width: 260px; max-width: calc(100vw - 32px); padding: 6px;
   border-radius: 14px; background: var(--surface); box-shadow: var(--shadow);
@@ -703,7 +704,7 @@ body.dropping::after {
 
   .view {
     grid-column: 1; grid-row: 2; min-height: 0;
-    overflow-y: auto; overscroll-behavior: contain;
+    overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
     padding: 0 16px 28px;
   }
   .view:not(#view-eq) { max-width: none; margin: 0; }
@@ -715,7 +716,7 @@ body.dropping::after {
     padding: 2px 24px 18px; border-left: 1px solid var(--line);
     overflow-y: auto;
   }
-  .graph { flex: 1 1 auto; height: auto; min-height: 300px; }
+  .graph { flex: 1 1 auto; height: auto; min-height: 220px; }
   .toolbar { flex: none; }
 
   .bands-head { margin-top: 8px; }
@@ -726,7 +727,8 @@ body.dropping::after {
   .hint { margin: 10px 4px 0; }
 
   /* Over the graph's foot, clear of its toolbar. */
-  .toast { left: calc(var(--side-w) + (100% - var(--side-w)) / 2); bottom: 92px; max-width: min(calc(100% - var(--side-w) - 48px), 560px); }
+  /* At the sidebar's foot, clear of the graph and its dots. */
+  .toast { left: calc(var(--side-w) / 2); bottom: 24px; max-width: calc(var(--side-w) - 32px); }
 }
 
 @media (prefers-reduced-motion: reduce) {

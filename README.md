@@ -27,8 +27,8 @@ On the graph, drag a dot to move a band (with Shift, finer), turn the wheel on a
 | 1, 2, 3 | EQ, Presets, Card |
 | Space | Inspect the curve: a line at the mouse, and the gain there |
 | Q, W, E | The band under the mouse (or the picked one): peak, low shelf, high shelf |
-| S, D | That band on or off; delete it |
-| A | Add a band, at the mouse on the graph |
+| S, D (or Delete) | That band on or off; delete it |
+| A (or +) | Add a band, at the mouse on the graph |
 | [, ] | Pick the band before, after |
 | ←, →, ↑, ↓ | With the graph focused or under the mouse, the band's frequency and gain (with Shift, finer) |
 | `,`, `.` | The band's Q, wider or narrower |
@@ -37,10 +37,11 @@ On the graph, drag a dot to move a band (with Shift, finer), turn the wheel on a
 | C | EQ on or off on the Q2 |
 | F | Fit the curve to the graph, after the wheel zoomed it |
 | / | Search the presets |
-| Ctrl+Z, Ctrl+Shift+Z | Undo, redo |
+| Ctrl+Z, Ctrl+Shift+Z (or Ctrl+Y) | Undo, redo |
 | Ctrl+C, Ctrl+V | Copy the EQ as text, open one pasted |
 | Ctrl+S, Ctrl+O | Save to the card, open a file |
-| Esc | Stop a drag where it began |
+| Esc | Stop a drag where it began; Inspect off |
+| ? | These keys, and the mouse's |
 
 The theme button beside Save picks light, dark or the system's, on phones too.
 

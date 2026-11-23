@@ -72,7 +72,9 @@
       const name = side === 'L' ? 'Left' : 'Right';
       return side === 'all' ? text : `${name}\n${text || `None: the ${name.toLowerCase()} side is flat.`}`;
     });
-    return { text: `${blocks.join('\n\n')}\n`, notes, count: Math.max(...lists.map(({ filters }) => filters.length)) };
+    const count = Math.max(...lists.map(({ filters }) => filters.length));
+    if (count > 10) notes.push(`${count} biquads an output: more than the 10 many miniDSPs take, as the 2x4 HD.`);
+    return { text: `${blocks.join('\n\n')}\n`, notes, count };
   }
 
   // Each side's impulse response at rate: the filters run on an impulse, with the preamp and balance in

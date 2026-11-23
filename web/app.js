@@ -106,6 +106,8 @@
   function changed() {
     send();
     invalidate();
+    // A toast's Undo is for the step it names: another step, and the toast is out of date.
+    if (!$('toastUndo').hidden && steps.past.at(-1) !== toastStep) $('toast').hidden = true;
   }
 
   function stepHistory(from, to) {
@@ -115,6 +117,7 @@
     picked = Math.min(picked, Math.max(preset.bands.length - 1, 0));
     steps.key = null;
     changed();
+    markChosen();
   }
   const undo = () => stepHistory(steps.past, steps.future);
   const redo = () => stepHistory(steps.future, steps.past);
@@ -609,6 +612,8 @@
   let mouse = null; // where a mouse over the graph is, not pressed: { x, y, ghost }
   let graphHover = -1; // the band whose dot the mouse is over
   let rowHover = -1; // the band whose row the mouse is over
+  let keyPicked = false; // [ or ] picked the band: the keys' band until the mouse moves
+  let toastStep; // the step a toast's Undo takes back
   let inspect = false;
   let curves = false; // each band's own curve
   let zoom = null; // the dB range the wheel set, or null for the curve's own
@@ -873,12 +878,13 @@
       const boxX = clamp(x - width / 2, gap.left, gap.left + plotW - width);
       context.fillStyle = colours.text;
       context.beginPath();
-      if (context.roundRect) context.roundRect(boxX, gap.top + 2, width, 22, 6);
-      else context.rect(boxX, gap.top + 2, width, 22);
+      const top = gap.top + ($('graphBadge').hidden && $('legend').hidden ? 2 : 34);
+      if (context.roundRect) context.roundRect(boxX, top, width, 22, 6);
+      else context.rect(boxX, top, width, 22);
       context.fill();
       context.fillStyle = colours['graph-bg'];
       context.textAlign = 'left';
-      context.fillText(text, boxX + 8, gap.top + 13.5);
+      context.fillText(text, boxX + 8, top + 11.5);
       context.restore();
     }
     return s;
@@ -961,12 +967,13 @@
 
   function startDrag(index, at, event, key = `drag:${event.timeStamp}`) {
     const { freq, gain } = preset.bands[index];
-    drag = { index, key, dx: scale.x(freq) - at.x, dy: scale.y(gain) - at.y, last: at, pos: { ...at }, fine: false };
+    drag = { index, key, dx: scale.x(freq) - at.x, gain, from: at.y, last: at, pos: { ...at }, fine: false };
     $('graph').classList.add('dragging');
   }
 
   function graphDown(event) {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
+    if (!$('moreMenu').hidden) return closeMenu();
     const canvas = $('graph');
     canvas.setPointerCapture(event.pointerId);
     const at = pointerAt(event);
@@ -1011,6 +1018,7 @@
     const index = dotAt(at, 'mouse');
     mouse = { ...at, ghost: index < 0 && onZero(at) };
     graphHover = index;
+    keyPicked = false;
     $('graph').classList.toggle('over-dot', index >= 0 || mouse.ghost);
     invalidate();
   }
@@ -1038,7 +1046,8 @@
     drag.pos = { x: drag.pos.x + (at.x - drag.last.x) * share, y: drag.pos.y + (at.y - drag.last.y) * share };
     drag.last = at;
     const freq = Number(scale.freqAt(drag.pos.x + drag.dx).toPrecision(event.shiftKey ? 4 : 3));
-    const gain = Math.round(scale.gainAt(drag.pos.y + drag.dy) * (event.shiftKey ? 100 : 10)) / (event.shiftKey ? 100 : 10);
+    const raw = drag.gain + scale.gainAt(drag.pos.y) - scale.gainAt(drag.from);
+    const gain = Math.round(raw * (event.shiftKey ? 100 : 10)) / (event.shiftKey ? 100 : 10);
     moveBand(drag.index, freq, gain, drag.key);
   }
 
@@ -1106,7 +1115,7 @@
       wheelQ.at = now;
       wheelQ.q = clamp(wheelQ.q * Math.exp(-delta * WHEEL_Q * (event.shiftKey ? 0.25 : 1)), eq.Q_MIN, eq.Q_MAX);
       pick(index);
-      editBand(index, (band) => { band.q = +wheelQ.q.toFixed(wheelQ.q < 1 ? 3 : 2); }, `wheel:${index}:${wheelQ.start}`);
+      setField(index, 'q', +wheelQ.q.toFixed(wheelQ.q < 1 ? 3 : 2), `wheel:${index}:${wheelQ.start}`);
       return;
     }
     zoomRoll += delta;
@@ -1259,6 +1268,7 @@
         del.setAttribute('aria-label', `Delete band ${n}`);
         // Bass's and Treble's Hz and Q are Poweramp's knobs': their gain alone moves.
         freq.readOnly = q.readOnly = !!knob;
+        type.disabled = channel.disabled = !!knob;
       }
       on.checked = band.on;
       if (type.value !== band.type) type.value = band.type;
@@ -1276,7 +1286,7 @@
     $('table').hidden = !bands.length;
     if (picked !== rowPicked && body.children[picked]) {
       rowPicked = picked;
-      if (wide.matches) body.children[picked].scrollIntoView({ block: 'nearest' });
+      if (wide.matches && keyPicked) body.children[picked].scrollIntoView({ block: 'nearest' });
     }
   }
 
@@ -1532,6 +1542,8 @@
     }
     $('saveGo').disabled = false;
     $('saveCancel').disabled = false;
+    // Asked to replace: focus on Cancel, as the step before had it on Save.
+    if (!replace && !$('saveReplace').hidden) $('saveCancel').focus();
     if (words) {
       $('saveError').textContent = words;
       $('saveError').hidden = false;
@@ -1626,11 +1638,16 @@
 
   // The page's HTTP from the Q2 has no clipboard API, so Copy runs the browser's copy command, whose
   // event the page fills; on HTTPS the API is there.
+  // Auto's preamp is the Q2's, worked out as it plays, so the text has none: the figure, for the app it goes to.
+  const copiedWords = () => (preset.auto
+    ? `The EQ is copied, as text. Its preamp is Auto, so the text has none: set ${signed(eq.autoPreamp(preset))} dB where you paste it.`
+    : 'The EQ is copied, as text.');
+
   async function copyEq() {
     if (window.isSecureContext && navigator.clipboard?.writeText) {
       try {
         await navigator.clipboard.writeText(eq.serialize(preset));
-        toast('The EQ is copied, as text.');
+        toast(copiedWords());
         return;
       } catch {
         // The command below, then.
@@ -1644,14 +1661,14 @@
       done = false;
     }
     copying = false;
-    toast(done ? 'The EQ is copied, as text.' : "This browser won't copy from here. Download it instead.");
+    toast(done ? copiedWords() : "This browser won't copy from here. Download it instead.");
   }
 
   function onCopy(event) {
     if (!copying && (typingIn(event.target) || String(window.getSelection()).trim() || modalOpen())) return;
     event.preventDefault();
     event.clipboardData.setData('text/plain', eq.serialize(preset));
-    if (!copying) toast('The EQ is copied, as text.');
+    if (!copying) toast(copiedWords());
   }
 
   function onPaste(event) {
@@ -1679,6 +1696,7 @@
   let toastTimer = 0;
 
   function toast(text, undoable = false) {
+    toastStep = steps.past.at(-1);
     $('toastText').textContent = text;
     $('toastUndo').hidden = !undoable;
     $('toast').hidden = false;
@@ -1743,6 +1761,7 @@
     setText(items.querySelector('[data-act=curves] span'), curves ? "Hide each band's curve" : "Show each band's curve");
     for (const act of ['bypass', 'clear']) items.querySelector(`[data-act=${act}]`).disabled = !preset.bands.length;
     items.hidden = false;
+    items.scrollIntoView({ block: 'nearest' });
     $('more').setAttribute('aria-expanded', 'true');
     items.querySelector('button:not(:disabled)').focus();
   }
@@ -1819,10 +1838,16 @@
   const modalOpen = () => !!document.querySelector('dialog[open]');
 
   // The band the keys act on: the one under the mouse, on the graph or in the table, or the picked one.
-  const keyBand = () => (graphHover >= 0 ? graphHover : rowHover >= 0 ? rowHover : picked);
+  const keyBand = () => (keyPicked ? picked : graphHover >= 0 ? graphHover : rowHover >= 0 ? rowHover : picked);
 
   function onKey(event) {
-    if ($('app').inert || modalOpen() || event.defaultPrevented || event.isComposing) return;
+    const command = (event.ctrlKey || event.metaKey) && !event.altKey;
+    if ($('app').inert || modalOpen()) {
+      // Not the browser's Save page or Open over the page, either.
+      if (command && /^[so]$/i.test(event.key)) event.preventDefault();
+      return;
+    }
+    if (event.defaultPrevented || event.isComposing) return;
     // Through a drag, Esc alone: it puts the band back.
     if (drag || pinch) {
       if (event.key === 'Escape' && cancelDrag()) event.preventDefault();
@@ -1835,15 +1860,23 @@
     if ((event.ctrlKey || event.metaKey) && !altGr) {
       if (event.altKey) return;
       const letter = key.toLowerCase();
-      const typing = typingIn(target);
+      // A band's box is the app's: its undo is the app's, not the box's text.
+      const box = target.classList?.contains('tin');
+      const typing = typingIn(target) && !box;
       if (letter === 's' && !event.shiftKey) openSave();
       else if (letter === 'o' && !event.shiftKey) $('fileIn').click();
-      else if (typing) return;
+      else if (typing || (box && letter === 'c')) return;
       else if (letter === 'z' && !event.shiftKey) undo();
       else if (letter === 'y' || (letter === 'z' && event.shiftKey)) redo();
       else if (letter === 'c' && !event.shiftKey && !String(window.getSelection()).trim()) copyEq();
       else return;
       event.preventDefault();
+      if (box) {
+        // What the undo left in it, the next paint leaving a focused box alone.
+        const band = preset.bands[indexOf(target)];
+        if (band) target.value = decimals(band[target.dataset.field], FIELD_DIGITS[target.dataset.field]);
+        target.select();
+      }
       return;
     }
     if ((event.altKey && !altGr) || typingIn(target) || !$('moreMenu').hidden) return;
@@ -1853,10 +1886,13 @@
     }
     // The tabs, the list and search anywhere; the rest is the graph's, and a phone's Presets and Card
     // have none.
-    if (!wide.matches && view !== 'eq' && !['1', '2', '3', '?', '/', 'c', 'C'].includes(key)) return;
-    // Space where nothing else takes it, the page or the graph; the arrows on the graph, focused or
-    // under the mouse, so elsewhere they scroll.
+    if (!wide.matches && view !== 'eq' && !['1', '2', '3', '?', '/'].includes(key)) return;
+    // Space where nothing else takes it, the page or the graph. The arrows there too, or on a plain
+    // button a click left focused, when the graph is under the mouse or the EQ tab beside it; else
+    // they scroll.
     const free = target === document.body || target === $('graph') || target === document.documentElement;
+    const plain = free || (target.tagName === 'BUTTON' && !target.getAttribute('role'));
+    const arrows = target === $('graph') || (plain && (mouse || (wide.matches && view === 'eq')));
     const band = keyBand();
     const once = !event.repeat;
     const fine = event.shiftKey;
@@ -1868,6 +1904,10 @@
       case ' ': if (!free) return; if (once) toggleInspect(); break;
       case 'q': case 'Q': case 'w': case 'W': case 'e': case 'E':
         if (!preset.bands[band]) return;
+        if (pa.knobOf(preset.bands[band])) {
+          if (once) toast(`${KNOB_NAMES[pa.knobOf(preset.bands[band])]} is Poweramp's knob: it stays a shelf.`);
+          break;
+        }
         editBand(band, (b) => { b.type = { q: 'PK', w: 'LSC', e: 'HSC' }[key.toLowerCase()]; });
         break;
       case 'r': case 'R': case 't': case 'T':
@@ -1897,9 +1937,10 @@
       case '[': case ']':
         if (!preset.bands.length) return;
         pick((picked + (key === ']' ? 1 : preset.bands.length - 1)) % preset.bands.length);
+        keyPicked = true;
         break;
       case 'ArrowLeft': case 'ArrowRight': case 'ArrowUp': case 'ArrowDown': case ',': case '.': case '<': case '>':
-        if ((key.startsWith('Arrow') && !(target === $('graph') || (free && mouse))) || !preset.bands[band]) return;
+        if ((key.startsWith('Arrow') && !arrows) || !preset.bands[band]) return;
         if (band !== picked) pick(band);
         nudge(band, key.startsWith('ArrowL') || key.startsWith('ArrowR') ? 'freq' : key.startsWith('Arrow') ? 'gain' : 'q',
           key === 'ArrowRight' || key === 'ArrowUp' || key === '.' || key === '>' ? 1 : -1, fine, nudgeKey);
@@ -2029,6 +2070,7 @@
       else {
         const focused = document.activeElement === event.target.closest('.tdel');
         removeBand(index);
+        syncTable();
         if (focused) (body.children[Math.min(index, body.children.length - 1)]?.querySelector('.tdel') ?? $('add')).focus();
       }
     });
@@ -2036,6 +2078,7 @@
       const index = indexOf(event.target);
       if (index !== rowHover) {
         rowHover = index;
+        keyPicked = false;
         invalidate();
       }
     });
@@ -2195,8 +2238,20 @@
       invalidate();
     });
     // Across 960px the page changes layout: what was laid out for the other one goes.
+    // The tab's place, kept across 960px: a computer's tab scrolls in the sidebar, a phone's page as a whole.
+    let viewTop = 0;
+    document.addEventListener('scroll', (event) => {
+      const box = scroller(view);
+      if (event.target === (box ?? document)) viewTop = box ? box.scrollTop : window.scrollY;
+    }, { capture: true, passive: true });
     wide.addEventListener('change', () => {
-      closeMenu();
+      const top = viewTop;
+      requestAnimationFrame(() => {
+        const box = scroller(view);
+        if (box) box.scrollTop = top;
+        else window.scrollTo(0, top);
+      });
+      closeMenu($('moreMenu').contains(document.activeElement));
       [stripPicked, rowPicked, rowHover] = [-1, -1, -1];
       for (const name of VIEWS) delete scrolls[name];
       invalidate();
