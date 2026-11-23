@@ -78,3 +78,17 @@ test('average: the sides on a log grid, 0 dB at 500 Hz, flat past their ends', (
   assert.ok(Math.abs(level(20) - level(100)) < 0.05 && Math.abs(level(20000) - level(10000)) < 0.05);
   assert.equal(squig.at([[100, 1], [100, 3], [200, 5]], 100), 1);
 });
+
+test('targets: each kind has some, named once, every address on squig.link where the CSP lets the page go', () => {
+  const names = squig.TARGETS.map((target) => target.name);
+  assert.equal(new Set(names).size, names.length);
+  for (const [kind] of squig.TARGET_KINDS) assert.ok(squig.TARGETS.some((target) => target.kind === kind), kind);
+  for (const target of squig.TARGETS) {
+    assert.ok(target.urls.length > 0, target.name);
+    for (const url of target.urls) {
+      const { protocol, hostname, pathname } = new URL(url);
+      assert.ok(protocol === 'https:' && /^([a-z0-9-]+\.)?squig\.link$/.test(hostname), url);
+      assert.ok(pathname.endsWith('%20Target.txt') && !pathname.includes('%2F'), url);
+    }
+  }
+});

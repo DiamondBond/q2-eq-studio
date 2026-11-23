@@ -109,5 +109,30 @@
     return GRID.map((f) => [f, level(curves, f) - centre]);
   }
 
-  return { HOME, SITES, KINDS, LAYOUTS, sites, phones, bookUrl, sideUrls, readCurve, at, average };
+  // Targets: PEQdB Studio's (less its own) and squig.link's own, each from squig.link sites that keep
+  // it, the first that answers taken. Grouped by the rig they're for: a target is drawn on one.
+  const TARGET_KINDS = [['IEMs', 'For in-ears'], ['Headphones', 'For headphones'], ['5128', 'For a B&K 5128']];
+  const file = (base, name) => `${base}${encodeURIComponent(`${name} Target.txt`)}`;
+  const sub = (user, folder = '') => `https://${user}.squig.link/${folder}data/`;
+  const MAIN = `${HOME}/data/`;
+  const TARGETS = [
+    { kind: 'IEMs', name: 'Harman IE 2019', urls: [file(MAIN, 'Harman IE 2019')] },
+    { kind: 'IEMs', name: '∆ JM-1 −10dB Tilt', urls: ['theaudiostore', 'bloomaudio', 'bassaudio'].map((user) => file(sub(user), '∆ JM-1 for 711 - 10dB Tilt')) },
+    { kind: 'IEMs', name: 'IEF Preference 2025', urls: ['fahryst', 'gadgetrytech'].map((user) => file(sub(user), 'IEF Preference 2025')) },
+    { kind: 'IEMs', name: 'Knowles', urls: [file(`${HOME}/lab/jaraba/data/`, 'Knowles')] },
+    { kind: 'IEMs', name: 'Moondrop VDSF', urls: ['bedrock', 'fahryst'].map((user) => file(sub(user), 'Moondrop VDSF')) },
+    { kind: 'IEMs', name: '∆ Harman MoA 2025', urls: [file(MAIN, '∆ Harman MoA 2025')] },
+    { kind: 'IEMs', name: 'Super 22', urls: [file(MAIN, 'Super 22')] },
+    { kind: 'IEMs', name: 'Crinacle 2023 Adjusted', urls: [file(MAIN, 'Crinacle 2023 Adjusted')] },
+    { kind: 'IEMs', name: 'Diffuse Field', urls: [file(MAIN, 'Diffuse Field')] },
+    { kind: 'Headphones', name: 'Harman OE 2018', urls: [file(`${sub('filk')}targets/`, 'Harman OE 2018'), file(`${sub('kr0mka', 'headphones/')}targets/`, 'Harman OE 2018')] },
+    { kind: 'Headphones', name: 'Harman OE 2018 Linear Bass', urls: [file(sub('iemworld', 'headphones/'), 'Harman OE 2018 Linear'), file(sub('kuulokenurkka'), 'Harman 2018 With Linear Bass')] },
+    { kind: 'Headphones', name: 'Harman OE 2013', urls: [file(`${HOME}/lab/elrics/headphones/data/targets/`, 'Harman OE 2013'), file(`${sub('kr0mka', 'headphones/')}targets/`, 'Harman OE 2013')] },
+    { kind: 'Headphones', name: 'KEMAR KB50xx −10dB Tilt', urls: ['audioamigo', 'boizoff'].map((user) => file(sub(user, 'headphones/'), '10dB Tilt KEMAR DF (KB50xx)')) },
+    { kind: 'Headphones', name: 'KEMAR KB006x −10dB Tilt', urls: [file(`${HOME}/headphones/data/`, 'KEMAR DF (KB006x) 10dB Tilt')] },
+    { kind: '5128', name: '∆ 5128DF −10dB Tilt', urls: [file(MAIN, '∆ 5128DF - 10dB Tilt')] },
+    { kind: '5128', name: '∆ 5128DF', urls: [file(MAIN, '∆ 5128DF')] },
+  ];
+
+  return { HOME, SITES, KINDS, LAYOUTS, TARGET_KINDS, TARGETS, sites, phones, bookUrl, sideUrls, readCurve, at, average };
 });

@@ -51,7 +51,17 @@ The theme button beside Save picks light, dark or the system's, on phones too.
 
 The **Response** tab shows how an earphone or headphone measures, and what your EQ does to it. Pick who measured it (any reviewer on [squig.link](https://squig.link), Super* Review first: in-ears, headphones, earbuds, or earphones on a B&K 5128), search, and pick one. The graph draws its frequency response in grey, **Measured**, and the response with your EQ in bold, **Measured + EQ**, over the EQ's own curve. As on squig.link, it's 0 dB at 500 Hz and the scale opens to ±30 dB; the wheel zooms in. Edit the bands and the bold line follows. A phone goes to the EQ tab to show it; on a computer it's beside the list. Click its name under the graph to take it off.
 
-It's only drawn: the Q2 plays the EQ, and the measurement is never saved or sent to it. The phone or computer reads squig.link itself, so this needs its internet; the rest of EQ Studio needs none. It stays on the graph for the next visit in the same browser.
+Pick a **Target** too and it's drawn dashed, lined up at 500 Hz. These are the targets PEQdB Studio offers (less its own house curves), and squig.link's own:
+
+| For | Targets |
+| --- | --- |
+| In-ears | Harman IE 2019, ∆ JM-1 −10dB Tilt, IEF Preference 2025, Knowles, Moondrop VDSF, ∆ Harman MoA 2025, Super 22, Crinacle 2023 Adjusted, Diffuse Field |
+| Headphones | Harman OE 2018, Harman OE 2018 Linear Bass, Harman OE 2013, KEMAR KB50xx −10dB Tilt, KEMAR KB006x −10dB Tilt |
+| A B&K 5128 | ∆ 5128DF −10dB Tilt, ∆ 5128DF |
+
+Picking headphones brings a headphone target, and in-ears an in-ear one: each is made for the rig it's measured on. **AutoEQ**, beside the earphone's name under the graph, then fits the bands to bring it to the target, as AutoEq would: a low shelf at 105 Hz, a high shelf at 10 kHz and peaks between, nothing chased past 10 kHz, treble cuts to 6 dB and boosts to 6 dB, the preamp Auto. It replaces the EQ as a preset does; Undo takes it back.
+
+The measurement and the target are only drawn: the Q2 plays the EQ, and neither is saved or sent to it. The phone or computer reads squig.link itself, so this needs its internet; the rest of EQ Studio needs none. It stays on the graph for the next visit in the same browser.
 
 ### Live EQ
 
@@ -97,7 +107,8 @@ It prints the address with the key. Live EQ answers once a `q2-addon.caps` holdi
 - **PEQdB Studio** ([peqdb.com/studio](https://peqdb.com/studio)): the computer's layout, its keys and its mouse follow it. No code of it is here.
 - **File Browser** by group-a-study ([q2-filebrowser](https://github.com/group-a-study/q2-filebrowser)), MIT: the Q2 glue (`internal/`, `build.sh`, `tools/package.py`, `card/run`) and the sign-in. Its licence is `internal/LICENSE`.
 - **AutoEq** by Jaakko Pasanen, MIT (`data/AUTOEQ-LICENSE.txt`): the presets, computed from measurements by Crinacle, oratory1990 and others.
-- **squig.link** and its reviewers: the measurements under Response, each its reviewer's, read from squig.link as they're picked; only which one is picked is kept, in the browser.
+- **squig.link** and its reviewers: the measurements and targets under Response, each its reviewer's, read from squig.link as they're picked; only which ones are picked is kept, in the browser. The targets are Harman's, headphones.com's (JM-1), In-Ear Fidelity's, Knowles', Moondrop's and others', as their squig.link sites keep them.
+- **AutoEq**'s approach shapes AutoEQ's fit (`web/fit.js`); its code is EQ Studio's own.
 
 ## Licence
 

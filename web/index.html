@@ -14,6 +14,7 @@
 <script src="formats.js" defer></script>
 <script src="poweramp.js" defer></script>
 <script src="squig.js" defer></script>
+<script src="fit.js" defer></script>
 <script src="app.js" defer></script>
 </head>
 <body>
@@ -104,7 +105,7 @@
       <div id="graphBox" class="graph">
         <canvas id="graph" tabindex="0" role="img" aria-label="The EQ's curve. The bands hold the same values; with the graph focused, the arrow keys move the picked band."></canvas>
         <p id="graphBadge" class="badge" hidden></p>
-        <p id="legend" class="legend" hidden><span class="key-e">EQ</span><span class="key-l">Left</span><span class="key-r">Right</span><span class="key-m">Measured</span><span class="key-q">Measured + EQ</span></p>
+        <p id="legend" class="legend" hidden><span class="key-e">EQ</span><span class="key-l">Left</span><span class="key-r">Right</span><span class="key-m">Measured</span><span class="key-t">Target</span><span class="key-q">Measured + EQ</span></p>
         <p id="readout" class="readout" aria-hidden="true" hidden></p>
         <button id="fit" type="button" class="fit" title="Fit the curve (F)" aria-keyshortcuts="F" hidden><svg class="i" aria-hidden="true"><use href="#i-fit"/></svg><span id="fitText">Fit</span></button>
       </div>
@@ -114,11 +115,14 @@
         <button id="redo" type="button" class="icon-btn" aria-label="Redo" title="Redo (Ctrl+Shift+Z)" aria-keyshortcuts="Control+Shift+Z"><svg class="i" aria-hidden="true"><use href="#i-redo"/></svg></button>
         <button id="curves" type="button" class="icon-btn toggle mouse-only" aria-pressed="false" aria-label="Each band's curve" title="Each band's curve (V)" aria-keyshortcuts="V"><svg class="i" aria-hidden="true"><use href="#i-curves"/></svg></button>
         <button id="inspect" type="button" class="icon-btn toggle mouse-only" aria-pressed="false" aria-label="Inspect the curve" title="Inspect the curve (Space)" aria-keyshortcuts="Space"><svg class="i" aria-hidden="true"><use href="#i-inspect"/></svg></button>
-        <button id="shownChip" type="button" class="chip-btn shown-chip" hidden><span id="shownName"></span><svg class="i" aria-hidden="true"><use href="#i-close"/></svg></button>
         <div id="compare" class="seg compare" role="radiogroup" aria-label="What the Q2 plays" title="EQ on or off on the Q2 (C)" aria-keyshortcuts="C" hidden>
           <button type="button" role="radio" aria-checked="false" data-value="on">EQ on</button>
           <button type="button" role="radio" aria-checked="false" data-value="off">EQ off</button>
         </div>
+      </div>
+      <div id="shownBar" class="shown-bar" hidden>
+        <button id="shownChip" type="button" class="chip-btn shown-chip"><span id="shownName"></span><svg class="i" aria-hidden="true"><use href="#i-close"/></svg></button>
+        <button id="autoEq" type="button" class="btn small" hidden>AutoEQ</button>
       </div>
       <ul id="warnings" class="warnings" hidden></ul>
     </div>
@@ -237,7 +241,10 @@
     </section>
 
     <section id="view-response" class="view" role="tabpanel" aria-labelledby="tab-response" hidden>
-      <label class="pick"><span>Measured by</span><select id="squigSite" disabled><option>Loading…</option></select></label>
+      <div class="picks">
+        <label class="pick"><span>Measured by</span><select id="squigSite" disabled><option>Loading…</option></select></label>
+        <label class="pick"><span>Target</span><select id="squigTarget"><option value="">None</option></select></label>
+      </div>
       <div class="search-bar">
         <label class="search">
           <svg class="i" aria-hidden="true"><use href="#i-search"/></svg>
@@ -248,7 +255,7 @@
       <p id="squigNote" class="list-note" aria-live="polite"></p>
       <ul id="squigList" class="list"></ul>
       <button id="squigRetry" type="button" class="btn wide" hidden>Try again</button>
-      <p class="credit">Frequency responses from squig.link, each measured by its reviewer and read by this phone or computer as you pick it. It sits under your EQ on the graph, to show what the EQ does to it; the Q2 plays only the EQ.</p>
+      <p class="credit">Frequency responses and targets from squig.link, each measured or kept by its reviewer and read by this phone or computer as you pick it. They're drawn under your EQ on the graph, to show what the EQ does; the Q2 plays only the EQ. AutoEQ, under the graph, fits the bands to the target as AutoEq would: shelves at 105 Hz and 10 kHz and peaks between, nothing past 10 kHz, no boost over 6 dB.</p>
     </section>
 
     <section id="view-card" class="view" role="tabpanel" aria-labelledby="tab-card" hidden>
