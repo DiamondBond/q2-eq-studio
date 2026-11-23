@@ -99,15 +99,14 @@
     return f1 === f0 ? a : a + (b - a) * Math.log(f / f0) / Math.log(f1 / f0);
   }
 
-  // The sides averaged on a 1/48-octave grid, 0 dB their mean from 500 Hz to 2 kHz, where the EQ's
-  // 0 dB line can sit on it.
+  // The sides averaged on a 1/48-octave grid, 0 dB at 500 Hz, where squig.link lines curves up (the
+  // IEC's choice), so the EQ's 0 dB line sits there.
   const GRID = [];
   for (let f = 20; f <= 20000; f *= 2 ** (1 / 48)) GRID.push(f);
+  const level = (curves, f) => curves.reduce((sum, curve) => sum + at(curve, f), 0) / curves.length;
   function average(curves) {
-    const levels = GRID.map((f) => curves.reduce((sum, curve) => sum + at(curve, f), 0) / curves.length);
-    const mid = levels.filter((_, i) => GRID[i] >= 500 && GRID[i] <= 2000);
-    const centre = mid.reduce((sum, level) => sum + level, 0) / mid.length;
-    return GRID.map((f, i) => [f, levels[i] - centre]);
+    const centre = level(curves, 500);
+    return GRID.map((f) => [f, level(curves, f) - centre]);
   }
 
   return { HOME, SITES, KINDS, LAYOUTS, sites, phones, bookUrl, sideUrls, readCurve, at, average };

@@ -68,12 +68,12 @@ test('readCurve takes REW and squig.link text: notes, tabs, commas and a phase a
   assert.deepEqual(points, [[20.5, 101.2], [500, 99], [1000, 98.5]]);
 });
 
-test('average: the sides on a log grid, 0 dB about 1 kHz, flat past their ends', () => {
+test('average: the sides on a log grid, 0 dB at 500 Hz, flat past their ends', () => {
   const left = [[100, 90], [1000, 100], [10000, 110]];
   const right = [[100, 94], [1000, 104], [10000, 114]];
   const curve = squig.average([left, right]);
   const level = (f) => squig.at(curve, f);
-  assert.ok(Math.abs(level(1000)) < 0.05, `1 kHz: ${level(1000)}`); // 500 Hz to 2 kHz average to 0
+  assert.ok(Math.abs(level(500)) < 0.05, `500 Hz: ${level(500)}`);
   assert.ok(Math.abs(level(100) - level(1000) + 10) < 0.05);
   assert.ok(Math.abs(level(20) - level(100)) < 0.05 && Math.abs(level(20000) - level(10000)) < 0.05);
   assert.equal(squig.at([[100, 1], [100, 3], [200, 5]], 100), 1);

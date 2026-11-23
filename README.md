@@ -47,11 +47,11 @@ On the graph, drag a dot to move a band (with Shift, finer), turn the wheel on a
 
 The theme button beside Save picks light, dark or the system's, on phones too.
 
-### Response: an earphone under the EQ
+### Response: a measurement under the EQ
 
-The **Response** tab shows how an earphone or headphone measures, and what your EQ does to it. Pick who measured it (any reviewer on [squig.link](https://squig.link), Super* Review first, in-ears, headphones and earbuds), search, and pick one: the graph draws its frequency response in grey and the response with your EQ in bold, over the EQ's own curve. Edit the bands and the bold line follows. A phone goes to the EQ tab to show it; on a computer it's beside the list. The name under the graph takes it off.
+The **Response** tab shows how an earphone or headphone measures, and what your EQ does to it. Pick who measured it (any reviewer on [squig.link](https://squig.link), Super* Review first: in-ears, headphones, earbuds, or earphones on a B&K 5128), search, and pick one. The graph draws its frequency response in grey, **Measured**, and the response with your EQ in bold, **Measured + EQ**, over the EQ's own curve. As on squig.link, it's 0 dB at 500 Hz and the scale opens to ±30 dB; the wheel zooms in. Edit the bands and the bold line follows. A phone goes to the EQ tab to show it; on a computer it's beside the list. Click its name under the graph to take it off.
 
-It's only drawn: the Q2 plays the EQ, and the measurement is never saved or sent to it. The phone or computer reads squig.link itself, so this needs its internet; the rest of EQ Studio needs none. The earphone stays on the graph for the next visit.
+It's only drawn: the Q2 plays the EQ, and the measurement is never saved or sent to it. The phone or computer reads squig.link itself, so this needs its internet; the rest of EQ Studio needs none. It stays on the graph for the next visit in the same browser.
 
 ### Live EQ
 
@@ -97,7 +97,7 @@ It prints the address with the key. Live EQ answers once a `q2-addon.caps` holdi
 - **PEQdB Studio** ([peqdb.com/studio](https://peqdb.com/studio)): the computer's layout, its keys and its mouse follow it. No code of it is here.
 - **File Browser** by group-a-study ([q2-filebrowser](https://github.com/group-a-study/q2-filebrowser)), MIT: the Q2 glue (`internal/`, `build.sh`, `tools/package.py`, `card/run`) and the sign-in. Its licence is `internal/LICENSE`.
 - **AutoEq** by Jaakko Pasanen, MIT (`data/AUTOEQ-LICENSE.txt`): the presets, computed from measurements by Crinacle, oratory1990 and others.
-- **squig.link** and its reviewers: the measurements under Response, each its reviewer's, read from squig.link as they're picked and not kept here.
+- **squig.link** and its reviewers: the measurements under Response, each its reviewer's, read from squig.link as they're picked; only which one is picked is kept, in the browser.
 
 ## Licence
 

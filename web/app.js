@@ -628,14 +628,12 @@
     font = getComputedStyle(document.body).fontFamily;
   }
 
-  // The graph's reach follows the curve and the dots, but stands still through a drag.
+  // The graph's reach follows the curve and the dots, but stands still through a drag. Under a
+  // measurement it's ±30 dB, near squig.link's 55 dB window, so an earphone looks as it does there.
   function rangeFor(points) {
+    if (points[0]?.m !== undefined) return RANGE_MAX;
     let most = 0;
-    for (const point of points) {
-      most = Math.max(most, Math.abs(point.left), Math.abs(point.right));
-      // A measurement under the EQ as far as 10 kHz: past it in-ears fall away and would squash the rest.
-      if (point.m !== undefined && point.f <= 10000) most = Math.max(most, Math.abs(point.m), Math.abs(point.m + point.left), Math.abs(point.m + point.right));
-    }
+    for (const point of points) most = Math.max(most, Math.abs(point.left), Math.abs(point.right));
     for (const band of preset.bands) if (band.on) most = Math.max(most, Math.abs(band.gain));
     return clamp(Math.ceil((most + 1) / RANGE_STEP) * RANGE_STEP, RANGE_MIN, RANGE_MAX);
   }
@@ -1451,7 +1449,7 @@
   // no part in it) and only shown: the EQ, the card and the Q2 never see it. Kept for the next visit.
   const squigLib = window.Q2Squig;
   const SHOWN_KEY = 'eq-studio-response';
-  const SQUIG_MAX = 4 << 20; // the biggest phone book is about 300 KB, a measurement tens
+  const SQUIG_MAX = 4 << 20; // the biggest phone book is about 300 KB, a measurement tens of KB
   const SQUIG_MS = 20000;
   const squig = { sites: null, site: 'superreview/', books: new Map(), layouts: new Map(), loading: false, error: '', busy: false, asked: 0 };
   let shown = null; // { base, file, name, by, points }
@@ -1471,7 +1469,7 @@
     if (!response.ok) {
       throw Object.assign(new Error(response.status === 404 ? `squig.link doesn't have ${what}.` : `squig.link answered ${response.status} for ${what}.`), { status: response.status });
     }
-    const big = `squig.link sent far more than ${what} should be.`;
+    const big = `squig.link sent too much for ${what}.`;
     if (Number(response.headers.get('content-length')) > SQUIG_MAX) throw new Error(big);
     const text = await response.text();
     if (text.length > SQUIG_MAX) throw new Error(big);
@@ -1520,7 +1518,7 @@
     else renderSquig();
   }
 
-  const kindWord = (site) => (site.kind === '5128' ? 'measurements' : site.kind === 'IEMs' ? 'in-ears' : site.kind.toLowerCase());
+  const kindWord = (site) => (site.kind === '5128' ? 'earphones' : site.kind === 'IEMs' ? 'in-ears' : site.kind.toLowerCase());
 
   // A search wants every word, in any order, in the name.
   function renderSquig() {
@@ -1557,7 +1555,7 @@
       ? (!found.length ? 'No match. Try fewer words, or another reviewer.'
         : found.length > PRESET_ROWS ? `The first ${PRESET_ROWS} of ${count(found.length)} matches. Add a word to narrow it.`
           : `${count(found.length)} ${found.length === 1 ? 'match' : 'matches'}.`)
-      : `${site.name} measured ${count(phones.length)} ${word}${phones.length > PRESET_ROWS ? `, the first ${PRESET_ROWS} here: search for the rest` : ''}. `
+      : `${site.name} measured ${count(phones.length)} ${word}${phones.length > PRESET_ROWS ? `, the first ${PRESET_ROWS} shown; search for the rest` : ''}. `
         + 'Pick one to see it under your EQ.');
   }
 
@@ -1596,6 +1594,7 @@
         squig.layouts.set(pick.base, k);
         if (asked !== squig.asked) return false;
         shown = { ...pick, points: squigLib.average(curves) };
+        fit();
         keepSquig();
         syncShown();
         return true;
@@ -1632,6 +1631,7 @@
     const { name } = shown;
     shown = null;
     squig.asked += 1;
+    fit();
     keepSquig();
     syncShown();
     toast(`${name} is off the graph.`);
