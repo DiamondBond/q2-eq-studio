@@ -13,6 +13,8 @@
 <script src="eq.js" defer></script>
 <script src="formats.js" defer></script>
 <script src="poweramp.js" defer></script>
+<script src="fit.js" defer></script>
+<script src="squig.js" defer></script>
 <script src="app.js" defer></script>
 </head>
 <body>
@@ -217,6 +219,14 @@
     </section>
 
     <section id="view-presets" class="view" role="tabpanel" aria-labelledby="tab-presets" hidden>
+      <div id="sources" class="seg sources" role="radiogroup" aria-label="Presets from">
+        <button type="button" role="radio" data-value="autoeq">AutoEq</button>
+        <button type="button" role="radio" data-value="squig">squig.link</button>
+      </div>
+      <div id="squigPick" class="squig-pick" hidden>
+        <label class="pick"><span>Measured by</span><select id="squigSite"></select></label>
+        <label class="pick"><span>Target</span><select id="squigTarget"></select></label>
+      </div>
       <div class="search-bar">
         <label class="search">
           <svg class="i" aria-hidden="true"><use href="#i-search"/></svg>

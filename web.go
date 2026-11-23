@@ -33,7 +33,8 @@ const (
 	cookieName  = "q2eq"
 	presetLimit = 16 << 10 // the firmware's PEQ_FILE_LIMIT
 	csp         = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; " +
-		"connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+		"connect-src 'self' https://squig.link https://*.squig.link; " + // squig.link's measurements, read by the page
+		"base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
 )
 
 // web is the page (web/) and a JSON API behind the key the QR code carries (or the PIN on the Q2's

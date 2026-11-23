@@ -47,6 +47,12 @@ On the graph, drag a dot to move a band (with Shift, finer), turn the wheel on a
 
 The theme button beside Save picks light, dark or the system's, on phones too.
 
+### squig.link
+
+The Presets tab's **squig.link** switch reads reviewers' measurements of in-ears from [squig.link](https://squig.link): pick who measured (Super* Review first, or any of the hundred-odd others there), search their in-ears, and pick one. The phone or computer fetches its measurement and fits an EQ to the target picked (Harman IE 2019, Super 22, Crinacle 2023 Adjusted or Δ 10dB) as AutoEq shapes one: a low shelf at 105 Hz, a high shelf at 10 kHz and peaks between, nothing past 10 kHz, treble cuts to 6 dB and boosts to 6 dB, the preamp Auto. It plays and saves as any preset does.
+
+squig.link is read by the phone or computer, not the Q2, so this needs its internet; the AutoEq presets on the card need none. The reviewer, target and switch are kept for the next visit.
+
 ### Live EQ
 
 On a Q2 Pod with live EQ for card apps, the phone's EQ plays at once, as the Q2's EQ page's Apply does: into what EQ per Output keeps for the output playing, and an open EQ page shows it. The phone also turns the EQ on and off and starts from what the Q2 has set.
@@ -90,7 +96,8 @@ It prints the address with the key. Live EQ answers once a `q2-addon.caps` holdi
 - **Q2 Theme Studio** by Tyler ([tyleree](https://github.com/tyleree)), GPL-3.0: the page's EQ (`web/`) is its EQ tab, made for a phone.
 - **PEQdB Studio** ([peqdb.com/studio](https://peqdb.com/studio)): the computer's layout, its keys and its mouse follow it. No code of it is here.
 - **File Browser** by group-a-study ([q2-filebrowser](https://github.com/group-a-study/q2-filebrowser)), MIT: the Q2 glue (`internal/`, `build.sh`, `tools/package.py`, `card/run`) and the sign-in. Its licence is `internal/LICENSE`.
-- **AutoEq** by Jaakko Pasanen, MIT (`data/AUTOEQ-LICENSE.txt`): the presets, computed from measurements by Crinacle, oratory1990 and others.
+- **AutoEq** by Jaakko Pasanen, MIT (`data/AUTOEQ-LICENSE.txt`): the presets, computed from measurements by Crinacle, oratory1990 and others. `web/fit.js` follows its shape for an EQ; its code is its own.
+- **squig.link** and its reviewers: the measurements and targets the squig.link switch reads, each reviewer's own, fetched as they're picked and never kept here.
 
 ## Licence
 
