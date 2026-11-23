@@ -1,8 +1,8 @@
 // EQ logic with no page in it: a preset's text, its limits and its curve. Loaded by index.html as
 // window.Q2Eq and by eq.test.mjs as a module.
 //
-// From tyleree's Q2 Theme Studio (github.com/tyleree, GPL-3.0), unchanged but for these two lines:
-// test/theme.py below is in his repository.
+// From tyleree's Q2 Theme Studio (github.com/tyleree, GPL-3.0), unchanged but for these two lines
+// and design in the exports, for formats.js: test/theme.py below is in his repository.
 //
 // The firmware's patch/peq.c is the model. parse takes and refuses what peq_parse does, in its words,
 // and the curve is peq_compile's filters, so a file that passes here is one the Q2 imports.
@@ -391,6 +391,6 @@
   return {
     MAX_BANDS, FILE_MAX, FREQ_MIN, FREQ_MAX, GAIN_MAX, Q_MIN, Q_MAX, PREAMP_MIN, PREAMP_MAX, BALANCE_MAX,
     TYPES, CHANNELS, newBand, newPreset, cleanName, fileName, nameOfFile, normalize, parse, serialize,
-    response, bandResponse, peak, autoPreamp, warnings,
+    design, response, bandResponse, peak, autoPreamp, warnings,
   };
 });

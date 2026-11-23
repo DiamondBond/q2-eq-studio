@@ -9,7 +9,9 @@
 <title>EQ Studio</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
 <script src="eq.js" defer></script>
+<script src="formats.js" defer></script>
 <script src="poweramp.js" defer></script>
 <script src="app.js" defer></script>
 </head>
@@ -34,10 +36,23 @@
   <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4 2.5 20h19z"/><path d="M12 10v4M12 17h.01"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></symbol>
   <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></symbol>
+  <symbol id="i-keys" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/></symbol>
+  <symbol id="i-auto" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="i-paste" viewBox="0 0 24 24"><path d="M9 4h6v3H9z"/><path d="M15 5h3v16H6V5h3"/></symbol>
+  <symbol id="i-curves" viewBox="0 0 24 24"><path d="M3 17c3 0 4-9 7-9s4 9 7 9"/><path d="M3 12c4 0 6-5 9-5s4 5 9 5" opacity=".5"/></symbol>
+  <symbol id="i-inspect" viewBox="0 0 24 24"><path d="M12 3v18"/><circle cx="12" cy="10" r="2.5"/><path d="M4 21h16"/></symbol>
+  <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m3 17 5-5 4 4 3-3 6 6"/></symbol>
+  <symbol id="i-wave" viewBox="0 0 24 24"><path d="M3 12h3l2-6 4 12 3-9 2 3h4"/></symbol>
+  <symbol id="i-fit" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
   <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
 </svg>
 
-<div id="app">
+<div id="app" data-view="eq">
   <div id="top" class="top">
     <header class="bar">
       <label class="name">
@@ -48,7 +63,9 @@
       <div id="status" class="status" data-state="wait" role="status" aria-live="polite">
         <span class="dot" aria-hidden="true"></span><span id="statusText">Connecting</span>
       </div>
-      <button id="saveTop" type="button" class="text-btn">Save</button>
+      <button id="theme" type="button" class="icon-btn ghost" aria-label="Theme: as the system" title="Theme: as the system"><svg class="i" aria-hidden="true"><use href="#i-auto"/></svg></button>
+      <button id="keys" type="button" class="icon-btn ghost mouse-only" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)" aria-keyshortcuts="Shift+?"><svg class="i" aria-hidden="true"><use href="#i-keys"/></svg></button>
+      <button id="saveTop" type="button" class="text-btn" title="Save to the card (Ctrl+S)" aria-keyshortcuts="Control+S">Save</button>
     </header>
     <div id="alert" class="alert" role="alert" hidden>
       <svg class="i" aria-hidden="true"><use href="#i-warn"/></svg>
@@ -58,7 +75,13 @@
   </div>
 
   <main>
-    <section id="view-eq" class="view" role="tabpanel" aria-labelledby="tab-eq">
+    <nav class="tabs" role="tablist" aria-label="EQ Studio">
+      <button id="tab-eq" type="button" role="tab" aria-selected="true" aria-controls="view-eq" data-view="eq" aria-keyshortcuts="1"><svg class="i" aria-hidden="true"><use href="#i-eq"/></svg>EQ</button>
+      <button id="tab-presets" type="button" role="tab" aria-selected="false" aria-controls="view-presets" data-view="presets" aria-keyshortcuts="2"><svg class="i" aria-hidden="true"><use href="#i-headphones"/></svg>Presets</button>
+      <button id="tab-card" type="button" role="tab" aria-selected="false" aria-controls="view-card" data-view="card" aria-keyshortcuts="3"><svg class="i" aria-hidden="true"><use href="#i-card"/></svg>Card</button>
+    </nav>
+
+    <div id="stage" class="stage">
       <div id="noteLocal" class="note" hidden>
         <svg class="i" aria-hidden="true"><use href="#i-info"/></svg>
         <div>
@@ -73,103 +96,123 @@
         <div><p>The Q2 is on its simple 3-band EQ. Editing here switches it to this EQ.</p></div>
       </div>
 
-      <div class="eq-layout">
-        <div class="eq-main">
-          <div id="graphBox" class="graph">
-            <canvas id="graph" role="img" aria-label="The EQ's curve. The band editor below holds the same values."></canvas>
-            <p id="graphBadge" class="badge" hidden></p>
-            <p id="legend" class="legend" hidden><span class="key-l">Left</span><span class="key-r">Right</span></p>
-            <p id="readout" class="readout" aria-hidden="true" hidden></p>
-          </div>
+      <div id="graphBox" class="graph">
+        <canvas id="graph" tabindex="0" role="img" aria-label="The EQ's curve. The bands below hold the same values; with the graph focused, the arrow keys move the picked band."></canvas>
+        <p id="graphBadge" class="badge" hidden></p>
+        <p id="legend" class="legend" hidden><span class="key-l">Left</span><span class="key-r">Right</span></p>
+        <p id="readout" class="readout" aria-hidden="true" hidden></p>
+        <button id="fit" type="button" class="fit" title="Fit the curve (F)" aria-keyshortcuts="F" hidden><svg class="i" aria-hidden="true"><use href="#i-fit"/></svg><span id="fitText">Fit</span></button>
+      </div>
 
-          <div class="toolbar">
-            <button id="undo" type="button" class="icon-btn" aria-label="Undo" title="Undo"><svg class="i" aria-hidden="true"><use href="#i-undo"/></svg></button>
-            <button id="redo" type="button" class="icon-btn" aria-label="Redo" title="Redo"><svg class="i" aria-hidden="true"><use href="#i-redo"/></svg></button>
-            <div id="compare" class="seg compare" role="radiogroup" aria-label="What the Q2 plays" hidden>
-              <button type="button" role="radio" aria-checked="false" data-value="on">EQ on</button>
-              <button type="button" role="radio" aria-checked="false" data-value="off">EQ off</button>
-            </div>
-          </div>
-          <ul id="warnings" class="warnings" hidden></ul>
-
-          <div class="bands-head">
-            <h2>Bands <span id="count" class="count"></span></h2>
-            <button id="sort" type="button" class="chip-btn"><svg class="i" aria-hidden="true"><use href="#i-sort"/></svg>Sort</button>
-            <button id="add" type="button" class="chip-btn"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg>Add</button>
-          </div>
-          <div id="strip" class="strip" role="listbox" aria-label="Bands" aria-orientation="horizontal"></div>
-          <p class="hint"><span class="touch-only">Drag a dot to move it, pinch the graph for Q, double-tap to add a band.</span><span class="mouse-only">Drag a dot to move it, scroll over it for Q, double-click to add a band.</span></p>
+      <div class="toolbar">
+        <button id="undo" type="button" class="icon-btn" aria-label="Undo" title="Undo (Ctrl+Z)" aria-keyshortcuts="Control+Z"><svg class="i" aria-hidden="true"><use href="#i-undo"/></svg></button>
+        <button id="redo" type="button" class="icon-btn" aria-label="Redo" title="Redo (Ctrl+Shift+Z)" aria-keyshortcuts="Control+Shift+Z"><svg class="i" aria-hidden="true"><use href="#i-redo"/></svg></button>
+        <span class="tool-gap" aria-hidden="true"></span>
+        <button id="curves" type="button" class="icon-btn toggle" aria-pressed="false" aria-label="Each band's curve" title="Each band's curve (V)" aria-keyshortcuts="V"><svg class="i" aria-hidden="true"><use href="#i-curves"/></svg></button>
+        <button id="inspect" type="button" class="icon-btn toggle mouse-only" aria-pressed="false" aria-label="Inspect the curve" title="Inspect the curve (Space)" aria-keyshortcuts="Space"><svg class="i" aria-hidden="true"><use href="#i-inspect"/></svg></button>
+        <div id="compare" class="seg compare" role="radiogroup" aria-label="What the Q2 plays" title="EQ on or off on the Q2 (C)" aria-keyshortcuts="C" hidden>
+          <button type="button" role="radio" aria-checked="false" data-value="on">EQ on</button>
+          <button type="button" role="radio" aria-checked="false" data-value="off">EQ off</button>
         </div>
+      </div>
+      <ul id="warnings" class="warnings" hidden></ul>
+    </div>
 
-        <div class="eq-side">
-          <section class="card" aria-labelledby="bandTitle">
-            <div class="card-head">
-              <h2 id="bandTitle">Band</h2>
-              <label class="switch"><span class="sr" id="bandOnLabel">Band on</span><input id="bandOn" type="checkbox" role="switch"></label>
-              <button id="del" type="button" class="icon-btn danger" aria-label="Delete this band" title="Delete this band"><svg class="i" aria-hidden="true"><use href="#i-trash"/></svg></button>
-            </div>
-            <p id="bandEmpty" class="muted" hidden>No bands yet. Tap Add, or double-tap the graph.</p>
-            <div id="bandBody">
-              <div class="field">
-                <span class="label" id="typeLabel">Type</span>
-                <div id="type" class="seg" role="radiogroup" aria-labelledby="typeLabel">
-                  <button type="button" role="radio" data-value="PK">Peak</button>
-                  <button type="button" role="radio" data-value="LSC">Low shelf</button>
-                  <button type="button" role="radio" data-value="HSC">High shelf</button>
-                </div>
-              </div>
-              <div class="field">
-                <span class="label" id="channelLabel">Channel</span>
-                <div id="channel" class="seg" role="radiogroup" aria-labelledby="channelLabel">
-                  <button type="button" role="radio" data-value="all">Both</button>
-                  <button type="button" role="radio" data-value="L">Left</button>
-                  <button type="button" role="radio" data-value="R">Right</button>
-                </div>
-              </div>
-              <div class="ctl" data-ctl="freq"></div>
-              <div class="ctl" data-ctl="gain"></div>
-              <div class="ctl" data-ctl="q"></div>
-            </div>
-          </section>
-
-          <section class="card" aria-labelledby="toneTitle">
-            <h2 id="toneTitle">Bass and treble</h2>
-            <div class="ctl" data-ctl="bass"></div>
-            <div class="ctl" data-ctl="treble"></div>
-            <p id="toneNote" class="muted small"></p>
-          </section>
-
-          <section class="card" aria-labelledby="outTitle">
-            <h2 id="outTitle">Output</h2>
-            <div class="field">
-              <span class="label" id="preampLabel">Preamp</span>
-              <div id="preampMode" class="seg" role="radiogroup" aria-labelledby="preampLabel">
-                <button type="button" role="radio" data-value="auto">Auto</button>
-                <button type="button" role="radio" data-value="hand">By hand</button>
-              </div>
-              <p id="autoNote" class="muted small"></p>
-            </div>
-            <div id="preampCtl" class="ctl" data-ctl="preamp"></div>
-            <div class="ctl" data-ctl="balance"></div>
-            <p class="muted small">Above 0 turns the left side down, below 0 the right.</p>
-          </section>
-
-          <section class="card" aria-labelledby="curveTitle">
-            <h2 id="curveTitle">Curve</h2>
-            <div class="field">
-              <span class="label" id="rateLabel">Draw it at</span>
-              <div id="rate" class="seg" role="radiogroup" aria-labelledby="rateLabel">
-                <button type="button" role="radio" data-value="44100">44.1 kHz</button>
-                <button type="button" role="radio" data-value="48000">48</button>
-                <button type="button" role="radio" data-value="96000">96</button>
-                <button type="button" role="radio" data-value="192000">192</button>
-              </div>
-            </div>
-            <p id="peak" class="muted small"></p>
-          </section>
-
-          <button id="reset" type="button" class="btn wide">Start over with 10 flat bands</button>
+    <section id="view-eq" class="view" role="tabpanel" aria-labelledby="tab-eq">
+      <div class="bands-head">
+        <h2>Bands <span id="count" class="count"></span></h2>
+        <button id="sort" type="button" class="chip-btn" title="Sort by frequency"><svg class="i" aria-hidden="true"><use href="#i-sort"/></svg>Sort</button>
+        <button id="add" type="button" class="chip-btn" title="Add a band (A)" aria-keyshortcuts="A"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg>Add</button>
+        <button id="more" type="button" class="icon-btn ghost" aria-label="More for the bands" aria-haspopup="menu" aria-expanded="false" aria-controls="moreMenu"><svg class="i" aria-hidden="true"><use href="#i-more"/></svg></button>
+        <div id="moreMenu" class="menu" role="menu" aria-label="More for the bands" hidden>
+          <button type="button" role="menuitem" data-act="bypass"><svg class="i" aria-hidden="true"><use href="#i-power"/></svg><span id="bypassText">Turn every band off</span><kbd>B</kbd></button>
+          <button type="button" role="menuitemcheckbox" aria-checked="false" data-act="curves"><svg class="i" aria-hidden="true"><use href="#i-curves"/></svg><span>Show each band's curve</span><kbd>V</kbd></button>
+          <hr>
+          <button type="button" role="menuitem" data-act="copy"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg><span>Copy the EQ</span><kbd data-mod>Ctrl+C</kbd></button>
+          <button type="button" role="menuitem" data-act="paste"><svg class="i" aria-hidden="true"><use href="#i-paste"/></svg><span>Paste an EQ…</span><kbd data-mod>Ctrl+V</kbd></button>
+          <hr>
+          <button type="button" role="menuitem" data-act="clear" class="danger"><svg class="i" aria-hidden="true"><use href="#i-trash"/></svg><span>Delete every band</span></button>
         </div>
+      </div>
+      <div id="strip" class="strip" role="listbox" aria-label="Bands" aria-orientation="horizontal"></div>
+      <div id="table" class="table" role="grid" aria-label="Bands" aria-rowcount="0">
+        <div class="trow thead" role="row">
+          <span role="columnheader">#</span><span role="columnheader"><span class="sr">On</span></span><span role="columnheader">Type</span><span role="columnheader">Side</span>
+          <span role="columnheader">Hz</span><span role="columnheader">dB</span><span role="columnheader">Q</span><span role="columnheader"><span class="sr">Delete</span></span>
+        </div>
+        <div id="tbody" role="rowgroup"></div>
+      </div>
+      <p id="tableEmpty" class="muted small table-empty" hidden>No bands. Click the curve, or press A.</p>
+      <p class="hint"><span class="touch-only">Drag a dot to move it, pinch the graph for Q, double-tap to add a band.</span><span class="mouse-only">Drag a dot to move it, scroll over it for Q, click the 0 dB line to add a band. <kbd>?</kbd> shows the shortcuts.</span></p>
+
+      <div class="eq-side">
+        <section id="bandCard" class="card" aria-labelledby="bandTitle">
+          <div class="card-head">
+            <h2 id="bandTitle">Band</h2>
+            <label class="switch"><span class="sr" id="bandOnLabel">Band on</span><input id="bandOn" type="checkbox" role="switch"></label>
+            <button id="del" type="button" class="icon-btn danger" aria-label="Delete this band" title="Delete this band (D)"><svg class="i" aria-hidden="true"><use href="#i-trash"/></svg></button>
+          </div>
+          <p id="bandEmpty" class="muted" hidden>No bands yet. Tap Add, or double-tap the graph.</p>
+          <div id="bandBody">
+            <div class="field">
+              <span class="label" id="typeLabel">Type</span>
+              <div id="type" class="seg" role="radiogroup" aria-labelledby="typeLabel">
+                <button type="button" role="radio" data-value="PK">Peak</button>
+                <button type="button" role="radio" data-value="LSC">Low shelf</button>
+                <button type="button" role="radio" data-value="HSC">High shelf</button>
+              </div>
+            </div>
+            <div class="field">
+              <span class="label" id="channelLabel">Channel</span>
+              <div id="channel" class="seg" role="radiogroup" aria-labelledby="channelLabel">
+                <button type="button" role="radio" data-value="all">Both</button>
+                <button type="button" role="radio" data-value="L">Left</button>
+                <button type="button" role="radio" data-value="R">Right</button>
+              </div>
+            </div>
+            <div class="ctl" data-ctl="freq"></div>
+            <div class="ctl" data-ctl="gain"></div>
+            <div class="ctl" data-ctl="q"></div>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="toneTitle">
+          <h2 id="toneTitle">Bass and treble</h2>
+          <div class="ctl" data-ctl="bass"></div>
+          <div class="ctl" data-ctl="treble"></div>
+          <p id="toneNote" class="muted small"></p>
+        </section>
+
+        <section class="card" aria-labelledby="outTitle">
+          <h2 id="outTitle">Output</h2>
+          <div class="field">
+            <span class="label" id="preampLabel">Preamp</span>
+            <div id="preampMode" class="seg" role="radiogroup" aria-labelledby="preampLabel">
+              <button type="button" role="radio" data-value="auto">Auto</button>
+              <button type="button" role="radio" data-value="hand">By hand</button>
+            </div>
+            <p id="autoNote" class="muted small"></p>
+          </div>
+          <div id="preampCtl" class="ctl" data-ctl="preamp"></div>
+          <div class="ctl" data-ctl="balance"></div>
+          <p class="muted small">Above 0 turns the left side down, below 0 the right.</p>
+        </section>
+
+        <section class="card" aria-labelledby="curveTitle">
+          <h2 id="curveTitle">Curve</h2>
+          <div class="field">
+            <span class="label" id="rateLabel">Draw it at</span>
+            <div id="rate" class="seg" role="radiogroup" aria-labelledby="rateLabel">
+              <button type="button" role="radio" data-value="44100">44.1 kHz</button>
+              <button type="button" role="radio" data-value="48000">48</button>
+              <button type="button" role="radio" data-value="96000">96</button>
+              <button type="button" role="radio" data-value="192000">192</button>
+            </div>
+          </div>
+          <p id="peak" class="muted small"></p>
+        </section>
+
+        <button id="reset" type="button" class="btn wide">Start over with 10 flat bands</button>
       </div>
     </section>
 
@@ -178,7 +221,7 @@
         <label class="search">
           <svg class="i" aria-hidden="true"><use href="#i-search"/></svg>
           <span class="sr">Search presets</span>
-          <input id="search" type="search" placeholder="Search headphones" spellcheck="false" autocomplete="off" autocapitalize="off" enterkeyhint="search">
+          <input id="search" type="search" placeholder="Search headphones" spellcheck="false" autocomplete="off" autocapitalize="off" enterkeyhint="search" aria-keyshortcuts="/">
         </label>
         <div id="types" class="types" role="radiogroup" aria-label="Kind"></div>
       </div>
@@ -194,10 +237,12 @@
         <p id="cardThis" class="muted small"></p>
         <div class="actions">
           <button id="cardSave" type="button" class="btn primary"><svg class="i" aria-hidden="true"><use href="#i-save"/></svg>Save to card</button>
-          <button id="openFile" type="button" class="btn"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg>Open file</button>
+          <button id="openFile" type="button" class="btn" title="Open a file (Ctrl+O)"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg>Open file</button>
           <button id="export" type="button" class="btn"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg><span id="exportLabel">Download</span></button>
+          <button id="copy" type="button" class="btn" title="Copy the EQ as text (Ctrl+C)"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg>Copy</button>
+          <button id="paste" type="button" class="btn" title="Paste an EQ (Ctrl+V)"><svg class="i" aria-hidden="true"><use href="#i-paste"/></svg>Paste</button>
         </div>
-        <p class="muted small">Open file takes a preset's .txt, or a preset exported from Poweramp, with its Bass and Treble.</p>
+        <p class="muted small">Open file and Paste take a preset's text, as Equalizer APO, AutoEq and PEQdB write it, or a preset exported from Poweramp, with its Bass and Treble.<span class="mouse-only"> So does a file dropped on the page.</span></p>
         <input id="fileIn" type="file" accept=".txt,.json,text/plain,application/json" hidden>
       </section>
       <div class="list-head">
@@ -207,14 +252,20 @@
       <p class="list-note">The card's EQ folder. The Q2 imports from it under the EQ page's “Import from SD /EQ” row.</p>
       <ul id="cardList" class="list"></ul>
       <p id="cardNote" class="list-note" aria-live="polite"></p>
+      <div class="list-head">
+        <h2>For other apps</h2>
+      </div>
+      <p class="list-note">The curve the Q2 plays, as other EQs take it.</p>
+      <ul id="exports" class="list">
+        <li><button type="button" class="row" data-export="wavelet"><svg class="i lead" aria-hidden="true"><use href="#i-wave"/></svg><span class="row-text"><span class="t">Wavelet</span><span class="s">Its GraphicEQ, for Wavelet on Android</span></span></button></li>
+        <li><button type="button" class="row" data-export="biquad:48000"><svg class="i lead" aria-hidden="true"><use href="#i-eq"/></svg><span class="row-text"><span class="t">Biquads, 48 kHz</span><span class="s">miniDSP's text, a list for each output</span></span></button></li>
+        <li><button type="button" class="row" data-export="biquad:96000"><svg class="i lead" aria-hidden="true"><use href="#i-eq"/></svg><span class="row-text"><span class="t">Biquads, 96 kHz</span><span class="s">miniDSP's text, a list for each output</span></span></button></li>
+        <li><button type="button" class="row" data-export="wav:44100"><svg class="i lead" aria-hidden="true"><use href="#i-download"/></svg><span class="row-text"><span class="t">Convolution, 44.1 kHz</span><span class="s">An impulse response (.wav) for a convolver</span></span></button></li>
+        <li><button type="button" class="row" data-export="wav:48000"><svg class="i lead" aria-hidden="true"><use href="#i-download"/></svg><span class="row-text"><span class="t">Convolution, 48 kHz</span><span class="s">An impulse response (.wav) for a convolver</span></span></button></li>
+        <li><button type="button" class="row" data-export="png"><svg class="i lead" aria-hidden="true"><use href="#i-image"/></svg><span class="row-text"><span class="t">Picture of the graph</span><span class="s">A .png of the curve, with its name</span></span></button></li>
+      </ul>
     </section>
   </main>
-
-  <nav class="tabs" role="tablist" aria-label="EQ Studio">
-    <button id="tab-eq" type="button" role="tab" aria-selected="true" aria-controls="view-eq" data-view="eq"><svg class="i" aria-hidden="true"><use href="#i-eq"/></svg>EQ</button>
-    <button id="tab-presets" type="button" role="tab" aria-selected="false" aria-controls="view-presets" data-view="presets"><svg class="i" aria-hidden="true"><use href="#i-headphones"/></svg>Presets</button>
-    <button id="tab-card" type="button" role="tab" aria-selected="false" aria-controls="view-card" data-view="card"><svg class="i" aria-hidden="true"><use href="#i-card"/></svg>Card</button>
-  </nav>
 </div>
 
 <div id="toast" class="toast" role="status" aria-live="polite" hidden>
@@ -248,6 +299,69 @@
   <div class="dlg-buttons">
     <button id="askNo" type="button" class="btn">Cancel</button>
     <button id="askYes" type="button" class="btn primary">OK</button>
+  </div>
+</dialog>
+
+<dialog id="dlgPaste" aria-labelledby="pasteTitle">
+  <h2 id="pasteTitle">Paste an EQ</h2>
+  <label class="sr" for="pasteIn">The EQ's text</label>
+  <textarea id="pasteIn" class="text-in paste-in" rows="7" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="Preamp: -6 dB&#10;Filter 1: ON PK Fc 100 Hz Gain 3 dB Q 1.41"></textarea>
+  <p class="muted small">A preset's text, as Equalizer APO, AutoEq and PEQdB write it, or a preset Poweramp exported.</p>
+  <div class="dlg-buttons">
+    <button id="pasteCancel" type="button" class="btn">Cancel</button>
+    <button id="pasteGo" type="button" class="btn primary" disabled>Open</button>
+  </div>
+</dialog>
+
+<dialog id="dlgKeys" class="keys" aria-labelledby="keysTitle">
+  <h2 id="keysTitle">Keyboard and mouse</h2>
+  <div class="keys-cols">
+    <section>
+      <h3>Anywhere</h3>
+      <dl>
+        <dt><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></dt><dd>EQ, Presets, Card</dd>
+        <dt><kbd>Space</kbd></dt><dd>Inspect the curve</dd>
+        <dt><kbd data-mod>Ctrl+Z</kbd></dt><dd>Undo</dd>
+        <dt><kbd data-mod>Ctrl+Shift+Z</kbd></dt><dd>Redo</dd>
+        <dt><kbd data-mod>Ctrl+C</kbd> <kbd data-mod>Ctrl+V</kbd></dt><dd>Copy, paste the EQ as text</dd>
+        <dt><kbd data-mod>Ctrl+S</kbd></dt><dd>Save to the card</dd>
+        <dt><kbd data-mod>Ctrl+O</kbd></dt><dd>Open a file</dd>
+        <dt><kbd>C</kbd></dt><dd>EQ on or off on the Q2</dd>
+        <dt><kbd>B</kbd></dt><dd>Every band off, or on</dd>
+        <dt><kbd>V</kbd></dt><dd>Each band's curve</dd>
+        <dt><kbd>F</kbd></dt><dd>Fit the curve to the graph</dd>
+        <dt><kbd>/</kbd></dt><dd>Search the presets</dd>
+        <dt><kbd>?</kbd></dt><dd>This list</dd>
+      </dl>
+    </section>
+    <section>
+      <h3>A band: the one under the mouse, or the picked one</h3>
+      <dl>
+        <dt><kbd>Q</kbd> <kbd>W</kbd> <kbd>E</kbd></dt><dd>Peak, low shelf, high shelf</dd>
+        <dt><kbd>S</kbd></dt><dd>On or off</dd>
+        <dt><kbd>D</kbd> <kbd>Delete</kbd></dt><dd>Delete it</dd>
+        <dt><kbd>A</kbd></dt><dd>Add a band, at the mouse on the graph</dd>
+        <dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>Pick the band before, after</dd>
+        <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Frequency</dd>
+        <dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Gain</dd>
+        <dt><kbd>,</kbd> <kbd>.</kbd></dt><dd>Q, wider or narrower</dd>
+        <dt><kbd>Shift</kbd></dt><dd>With these, finer steps</dd>
+        <dt><kbd>Esc</kbd></dt><dd>Stop a drag where it began</dd>
+      </dl>
+      <h3>The mouse</h3>
+      <dl>
+        <dt>Drag a dot</dt><dd>Frequency and gain; <kbd>Shift</kbd> finer</dd>
+        <dt>Wheel on a dot</dt><dd>Q</dd>
+        <dt>Wheel on the graph</dt><dd>Zoom the dB scale</dd>
+        <dt>Click the 0 dB line</dt><dd>Add a band there, and drag it</dd>
+        <dt>Double-click</dt><dd>Add a band</dd>
+        <dt>Drop a file</dt><dd>Open it</dd>
+      </dl>
+    </section>
+  </div>
+  <p class="muted small">In a band's box, <kbd>↑</kbd> <kbd>↓</kbd> step it and <kbd>Enter</kbd> goes down a row.</p>
+  <div class="dlg-buttons">
+    <button id="keysClose" type="button" class="btn primary" autofocus>Done</button>
   </div>
 </dialog>
 

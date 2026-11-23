@@ -1,12 +1,12 @@
 ![EQ Studio on a phone: dragging a band on the EQ curve, AutoEq's presets, a band's editor, and the light theme](docs/eq-studio.png)
 
-Edit the EQ of [Q2 Pod](https://github.com/DiamondBond/q2-pod) on your phone: the parametric EQ's bands as a curve you can drag, AutoEq's presets for thousands of headphones and IEMs, and what you set playing on the Q2 as you set it.
+Edit the EQ of [Q2 Pod](https://github.com/DiamondBond/q2-pod) on your phone or computer: the parametric EQ's bands as a curve you can drag, AutoEq's presets for thousands of headphones and IEMs, and what you set playing on the Q2 as you set it.
 
 A card app for the Shanling Q2. Install it from Q2 Pod's App Store, or unzip `eq-studio.zip` at the card's root (it holds one folder, `.eq-studio`). It then appears in Library → **Apps**.
 
 ## Using it
 
-Open **EQ Studio** on the Q2: it shows a QR code. Scan it with a phone on the same Wi-Fi as the Q2 and the editor opens, signed in. Or type the address under the code into the phone's browser and enter the PIN beside it. Return on the Q2 leaves the code; **Open on Your Phone** shows it again.
+Open **EQ Studio** on the Q2: it shows a QR code. Scan it with a phone on the same Wi-Fi as the Q2 and the editor opens, signed in. Or type the address under the code into a browser, a phone's or a computer's, and enter the PIN beside it. Return on the Q2 leaves the code; **Open on Your Phone** shows it again.
 
 The Q2 stays awake while the phone is in use, and EQ Studio turns itself off after 15 minutes unused.
 
@@ -15,6 +15,34 @@ The Q2 stays awake while the phone is in use, and EQ Studio turns itself off aft
 | Open on Your Phone | The address and PIN; shows the QR code |
 | Live EQ | What you set on the phone plays at once |
 | No Live EQ | This Q2 Pod can't take the EQ from the phone |
+
+### On a computer
+
+A window 960 pixels wide or more shows the computer's layout: the tabs in a sidebar and the graph beside them, so a preset picked under Presets shows on the graph as it plays. The bands are a table, each value typed in place (`1.2k` is 1200 Hz) or stepped with ↑ and ↓, Enter going down a row. Narrow the window and it's the phone's layout again, with the same preset, history and band picked.
+
+On the graph, drag a dot to move a band (with Shift, finer), turn the wheel on a dot for its Q, turn it elsewhere to zoom the dB scale, and click the 0 dB line to add a band there and drag it. A preset's file dropped on the page opens. The keys are PEQdB Studio's where it has them; **?** lists them.
+
+| Keys | Do |
+| --- | --- |
+| 1, 2, 3 | EQ, Presets, Card |
+| Space | Inspect the curve: a line at the mouse, and the gain there |
+| Q, W, E | The band under the mouse (or the picked one): peak, low shelf, high shelf |
+| S, D | That band on or off; delete it |
+| A | Add a band, at the mouse on the graph |
+| [, ] | Pick the band before, after |
+| ←, →, ↑, ↓ | The picked band's frequency and gain (with Shift, finer) |
+| `,`, `.` | Its Q, wider or narrower |
+| B | Every band off, or on |
+| V | Each band's own curve |
+| C | EQ on or off on the Q2 |
+| F | Fit the curve to the graph, after the wheel zoomed it |
+| / | Search the presets |
+| Ctrl+Z, Ctrl+Shift+Z | Undo, redo |
+| Ctrl+C, Ctrl+V | Copy the EQ as text, open one pasted |
+| Ctrl+S, Ctrl+O | Save to the card, open a file |
+| Esc | Stop a drag where it began |
+
+The theme button beside Save picks light, dark or the system's, on phones too.
 
 ### Live EQ
 
@@ -26,7 +54,13 @@ Without it, the phone is an editor: save a preset to the card's `EQ` folder, the
 
 **Bass** and **Treble** are Poweramp's knobs: Bass a low shelf at 90 Hz, Q 0.8, Treble a high shelf at 10 kHz, Q 0.6, their sliders 0 to +15 dB as Poweramp's turn. Each is a band of its own, named on its chip, so it goes to the Q2 and into a saved preset as any band does; its dot on the graph moves only up and down, as the knob turns, and at 0 its band goes. The Q2's filters are peaks and shelves, so a knob is the shelf Poweramp's settings describe, close to Poweramp's sound but not checked against it.
 
-**Open file** on the Card tab also takes a preset exported from Poweramp (its `.json`): its bands and preamp, and Bass and Treble as those shelves, at the frequency and Q the file gives. What the Q2 can't take is said when the preset opens, and so is a preamp too small for the Q2, as Poweramp's often are: bands for one side only (the file doesn't say which side), more than 30 bands, values past the Q2's ranges. Poweramp's graphic-EQ presets aren't read: turn on its parametric EQ and export again.
+**Open file** and **Paste** on the Card tab (and Ctrl+V) also take a preset exported from Poweramp (its `.json`): its bands and preamp, and Bass and Treble as those shelves, at the frequency and Q the file gives. What the Q2 can't take is said when the preset opens, and so is a preamp too small for the Q2, as Poweramp's often are: bands for one side only (the file doesn't say which side), more than 30 bands, values past the Q2's ranges. Poweramp's graphic-EQ presets aren't read: turn on its parametric EQ and export again.
+
+### For other apps
+
+The Card tab's **For other apps** saves the curve the Q2 plays for other EQs: Wavelet's GraphicEQ, miniDSP's biquads at 48 or 96 kHz, an impulse response (`.wav`, 24-bit) at 44.1 or 48 kHz for a convolver such as Equalizer APO's, Roon's or JamesDSP's, and a picture of the graph. Each is worked out from the Q2's own filters; what a format can't hold is said as it saves: Wavelet has one curve for both sides, and biquads carry no preamp or balance. The impulse response has both, and is stereo when the sides differ.
+
+**Copy** puts the EQ on the clipboard as a preset's text, as Equalizer APO, AutoEq and PEQdB Studio read and write it, so an EQ goes back and forth with them.
 
 ## Files
 
@@ -50,7 +84,8 @@ It prints the address with the key. Live EQ answers once a `q2-addon.caps` holdi
 
 ## Credits
 
-- **Q2 Theme Studio** by Tyler ([tyleree](https://github.com/tyleree)), GPL-3.0: the phone page's EQ (`web/`) is its EQ tab, made for a phone.
+- **Q2 Theme Studio** by Tyler ([tyleree](https://github.com/tyleree)), GPL-3.0: the page's EQ (`web/`) is its EQ tab, made for a phone.
+- **PEQdB Studio** ([peqdb.com/studio](https://peqdb.com/studio)): the computer's layout, its keys and its mouse follow it. No code of it is here.
 - **File Browser** by group-a-study ([q2-filebrowser](https://github.com/group-a-study/q2-filebrowser)), MIT: the Q2 glue (`internal/`, `build.sh`, `tools/package.py`, `card/run`) and the sign-in. Its licence is `internal/LICENSE`.
 - **AutoEq** by Jaakko Pasanen, MIT (`data/AUTOEQ-LICENSE.txt`): the presets, computed from measurements by Crinacle, oratory1990 and others.
 
