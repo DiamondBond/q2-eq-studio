@@ -1611,7 +1611,7 @@
     chip.setAttribute('aria-label', shown ? `Take ${shown.name} off the graph` : '');
     const auto = $('autoEq');
     auto.hidden = !squig.target;
-    auto.disabled = !shownTarget();
+    auto.disabled = !shown; // a target that didn't load is asked for again
     auto.title = shown ? `Fit the bands to bring ${shown.name} to ${squig.target}` : '';
     markShown();
     invalidate();
@@ -1713,15 +1713,29 @@
   }
 
   // AutoEQ: the bands that bring the measurement to the target, as AutoEq shapes them, loaded as a
-  // preset is, so Undo takes them back.
+  // preset is, so Undo takes them back. One at a time, and none if the measurement or the target
+  // changed while it waited.
+  let fitting = false;
   async function autoEq() {
-    const target = shownTarget();
-    if (!target) return;
-    const [name, to] = [shown.name, squig.target];
-    toast(`Fitting ${name} to ${to}…`);
-    await new Promise((resolve) => { setTimeout(resolve, 30); }); // the toast shows before the fit's work
-    const { bands } = fitLib.fit({ measurement: [shown.points], target });
-    load({ ok: true, preset: { name: eq.cleanName(`${name} (${to})`), auto: true, preamp: 0, balance: 0, bands } }, 'by AutoEQ');
+    if (!shown || !squig.target || fitting) return;
+    fitting = true;
+    const [measured, to] = [shown, squig.target];
+    const still = () => shown === measured && squig.target === to;
+    if (!squig.targets.has(to)) await loadTarget();
+    const target = squig.targets.get(to);
+    if (target && still()) {
+      toast(`Fitting ${measured.name} to ${to}…`);
+      await new Promise((resolve) => { setTimeout(resolve, 30); }); // the toast shows before the fit's work
+      const { bands } = still() ? fitLib.fit({ measurement: [measured.points], target }) : {};
+      if (bands && !bands.length) toast(`${measured.name} is on ${to} already: no band would bring it closer.`);
+      else if (bands) {
+        // The target in the name, unless a long name would lose it.
+        const named = eq.cleanName(`${measured.name} (${to})`);
+        const name = named.endsWith(`(${eq.cleanName(to)})`) ? named : eq.cleanName(measured.name);
+        load({ ok: true, preset: { name, auto: true, preamp: 0, balance: 0, bands } }, 'by AutoEQ');
+      }
+    }
+    fitting = false;
   }
 
   // Last visit's reviewer and target, and its measurement fetched again; offline, it waits for the
