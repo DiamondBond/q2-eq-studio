@@ -1721,21 +1721,27 @@
     fitting = true;
     const [measured, to] = [shown, squig.target];
     const still = () => shown === measured && squig.target === to;
-    if (!squig.targets.has(to)) await loadTarget();
-    const target = squig.targets.get(to);
-    if (target && still()) {
+    try {
+      if (!squig.targets.has(to)) await loadTarget();
+      const target = squig.targets.get(to);
+      if (!target || !still()) return;
       toast(`Fitting ${measured.name} to ${to}…`);
       await new Promise((resolve) => { setTimeout(resolve, 30); }); // the toast shows before the fit's work
-      const { bands } = still() ? fitLib.fit({ measurement: [measured.points], target }) : {};
-      if (bands && !bands.length) toast(`${measured.name} is on ${to} already: no band would bring it closer.`);
-      else if (bands) {
-        // The target in the name, unless a long name would lose it.
-        const named = eq.cleanName(`${measured.name} (${to})`);
-        const name = named.endsWith(`(${eq.cleanName(to)})`) ? named : eq.cleanName(measured.name);
-        load({ ok: true, preset: { name, auto: true, preamp: 0, balance: 0, bands } }, 'by AutoEQ');
+      if (!still()) return;
+      const { bands } = fitLib.fit({ measurement: [measured.points], target });
+      if (!bands.length) {
+        toast(`${measured.name} is on ${to} already: no band would bring it closer.`);
+        return;
       }
+      // The target in the name, unless a long name would lose it.
+      const named = eq.cleanName(`${measured.name} (${to})`);
+      const name = named.endsWith(`(${eq.cleanName(to)})`) ? named : eq.cleanName(measured.name);
+      load({ ok: true, preset: { name, auto: true, preamp: 0, balance: 0, bands } }, 'by AutoEQ');
+    } catch (error) {
+      notice("AutoEQ couldn't fit it", error.message);
+    } finally {
+      fitting = false;
     }
-    fitting = false;
   }
 
   // Last visit's reviewer and target, and its measurement fetched again; offline, it waits for the

@@ -18,7 +18,7 @@ The Q2 stays awake while the phone is in use, and EQ Studio turns itself off aft
 
 ### On a computer
 
-![EQ Studio on a computer: the bands as a table beside the graph, dark theme](docs/eq-studio-desktop.png)
+![EQ Studio on a computer: an HD 600 measured on squig.link, drawn under its AutoEQ to Harman OE 2018, dark theme](docs/eq-studio-desktop.png)
 
 A window 960 pixels wide or more shows the computer's layout: the tabs in a sidebar and the graph beside them, so a preset picked under Presets shows on the graph as it plays. The bands are a table, each value typed in place (`1.2k` is 1200 Hz) or stepped with ↑ and ↓, Enter going down a row. Narrow the window and it's the phone's layout again, with the same preset, history and band picked.
 
