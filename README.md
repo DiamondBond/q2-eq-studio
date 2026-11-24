@@ -112,4 +112,4 @@ It prints the address with the key. Live EQ answers once a `q2-addon.caps` holdi
 
 ## Licence
 
-GPL-3.0-only (`LICENSE`). The files from File Browser keep its MIT licence.
+GPL-3.0-only (`LICENSE`), with an added permission to offer it, or an app based on it, through app stores such as Apple's App Store and TestFlight ([APP-STORE-EXCEPTION.md](APP-STORE-EXCEPTION.md)). The files from File Browser keep its MIT licence.
