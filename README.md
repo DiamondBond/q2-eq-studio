@@ -47,6 +47,10 @@ On the graph, drag a dot to move a band (with Shift, finer), turn the wheel on a
 
 The theme button beside Save picks light, dark or the system's, on phones too.
 
+### On an iPhone or iPad
+
+[EQ Studio for iPhone and iPad](https://github.com/js-surya/q2-eq-studio-ios), by Surya JS ([js-surya](https://github.com/js-surya)), is a native app that does what this page does: the curve, AutoEq's presets, Response and the card's EQ files, signed in by scanning the Q2's code or with its PIN. It talks to EQ Studio on the Q2, so EQ Studio stays installed there. It isn't on the App Store yet; until then, build it with Xcode as its README says.
+
 ### Response: a measurement under the EQ
 
 The **Response** tab shows how an earphone or headphone measures, and what your EQ does to it. Pick who measured it (any reviewer on [squig.link](https://squig.link), Super* Review first: in-ears, headphones, earbuds, or earphones on a B&K 5128), search, and pick one. The graph draws its frequency response in grey, **Measured**, and the response with your EQ in bold, **Measured + EQ**, over the EQ's own curve. As on squig.link, it's 0 dB at 500 Hz and the scale opens to ±30 dB; the wheel zooms in. Edit the bands and the bold line follows. A phone goes to the EQ tab to show it; on a computer it's beside the list. Click its name under the graph to take it off.
